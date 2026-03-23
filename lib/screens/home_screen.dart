@@ -5,16 +5,37 @@ import '../constants/app_config.dart';
 import '../models/gesture_event.dart';
 import '../providers/armed_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/gesture_integration_service.dart';
 import '../widgets/gesture_card.dart';
 
 /// Home screen dashboard showing all 5 gestures
 /// Master toggle + 5 gesture cards in 2x3 grid layout
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Watch state from providers
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize gesture integration on mount
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(gestureIntegrationProvider).initialize();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cleanup on unmount
+    ref.read(gestureIntegrationProvider).dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isArmed = ref.watch(armedProvider);
     final settings = ref.watch(settingsProvider);
 
