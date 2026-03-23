@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'constants/app_colors.dart';
+import 'screens/home_screen.dart';
 
 /// BARQ X Root Widget
 class BARQXApp extends StatelessWidget {
@@ -76,11 +77,7 @@ class BARQXApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('BARQ X - Phase 1 Setup Complete'),
-        ),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
