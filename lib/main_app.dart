@@ -4,7 +4,7 @@ import 'constants/app_colors.dart';
 
 /// BARQ X Root Widget
 class BARQXApp extends StatelessWidget {
-  const BARQXApp({Key? key}) : super(key: key);
+  const BARQXApp({super.key});
 
   @override
   Widget build(BuildContext context) {
