@@ -1,42 +1,46 @@
 import 'package:flutter/material.dart';
 
-/// BARQ X Color Palette - Soft Neo-Brutalism
-/// Cool pastels with heavy charcoal text for professional, frozen aesthetic
+/// BARQ X Color Palette v2 - High-Fidelity Soft Neo-Brutalism
+/// Refined color system with 2D comic accents and professional neo-brutalist styling
 class AppColors {
-  // Background
-  static const Color background = Color(0xFFF5F7F8); // Off-white with blue-grey tint
+  // Background & Atmosphere
+  static const Color background = Color(0xFFFFF8DE); // Aged Cream
+  static const Color gridOverlay = Color(0xFFD4F1F4); // Light Blue (15% opacity for grid)
 
-  // Primary Accent (Torch/Armed State)
-  static const Color accentPrimary = Color(0xFFB4D7F1); // Icy blue
+  // Master Toggle & Header
+  static const Color masterToggleActive = Color(0xFF75C6EB); // Sky Blue
 
-  // Secondary Accent (Camera)
-  static const Color accentSecondary = Color(0xFFD1E8E2); // Sage mint
+  // Gesture Card Colors (NEW DESIGN)
+  static const Color cardShake = Color(0xFFFF7B89); // Coral Red (Torch)
+  static const Color cardTwist = Color(0xFFB2E2D4); // Mint Green (Camera)
+  static const Color cardFlip = Color(0xFFA0A5FF); // Periwinkle (Smart Silence)
+  static const Color cardBackTap = Color(0xFFFFB3BA); // Soft Pink (Strike)
+  static const Color cardShield = Color(0xFFFFF2C6); // Pale Yellow (Protection)
 
-  // Tertiary Accent (DND)
-  static const Color accentTertiary = Color(0xFFE6D4F1); // Pale lavender
+  // Status Banner
+  static const Color statusBanner = Color(0xFF8CA9FF); // Bright Blue
 
-  // Quaternary Accent (Strike)
-  static const Color accentQuaternary = Color(0xFFF1D1D1); // Dusty rose
-
-  // Text & Borders
+  // Text & Borders (Neo-Brutalist)
   static const Color textPrimary = Color(0xFF1A1A1A); // Heavy charcoal black
   static const Color textSecondary = Color(0xFF666666); // Medium grey
 
-  // Toggle States
-  static const Color toggleDisarmed = Color(0xFFE6E6E6); // Grey (disarmed)
-  static const Color toggleArmed = Color(0xFFB4D7F1); // Icy blue (armed)
+  // Outlines & Borders (3.5px)
+  static const Color borderPrimary = Color(0xFF1A1A1A); // Heavy charcoal borders
+  static const Color borderSecondary = Color(0xFF8CA9FF); // Blue accent border (optional)
 
-  // Error/Overlay
-  static const Color errorRed = Color(0xFFD32F2F); // Deep red for permission overlay
-  static const Color overlayDark = Color(0x99000000); // 60% opacity black
+  // Shadows (Hard, 8px offset, 10% opacity)
+  static const Color shadowColor = Color(0xFF1A1A1A); // Hard shadows
 
-  // Shadow Color
-  static const Color shadowColor = Color(0xFF1A1A1A); // Heavy charcoal for shadows
-
-  // Divider & Border
-  static const Color borderColor = Color(0xFF1A1A1A); // Heavy charcoal borders
-
-  // Accessibility
-  static const Color disabledColor = Color(0xFFCCCCCC); // Light grey for disabled state
+  // Disabled & Accessibility
+  static const Color disabledColor = Color(0xFFCCCCCC); // Light grey
   static const Color successGreen = Color(0xFF4CAF50); // Success indicator
+  static const Color errorRed = Color(0xFFD32F2F); // Error red
+
+  // Legacy (keeping for backward compatibility)
+  static const Color accentPrimary = Color(0xFF75C6EB); // Sky Blue (now master toggle)
+  static const Color accentSecondary = Color(0xFFB2E2D4); // Mint
+  static const Color accentTertiary = Color(0xFFA0A5FF); // Periwinkle
+  static const Color accentQuaternary = Color(0xFFFFB3BA); // Soft Pink
+  static const Color toggleDisarmed = Color(0xFFE6E6E6); // Grey
+  static const Color toggleArmed = Color(0xFF75C6EB); // Sky Blue
 }

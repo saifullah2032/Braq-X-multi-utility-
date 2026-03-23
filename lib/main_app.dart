@@ -97,7 +97,7 @@ class _BARQXAppState extends State<BARQXApp> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
               side: const BorderSide(
-                color: AppColors.borderColor,
+                color: AppColors.borderPrimary,
                 width: 2,
               ),
             ),
