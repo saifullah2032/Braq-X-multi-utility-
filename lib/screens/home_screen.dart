@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:developer' as developer;
 import '../constants/app_colors.dart';
 import '../constants/app_config.dart';
 import '../models/gesture_event.dart';
@@ -21,9 +22,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    developer.log('HomeScreen mounted', name: 'HomeScreen');
+    
     // Initialize gesture integration on mount
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(gestureIntegrationProvider).initialize();
+      developer.log('Starting gesture integration service initialization...', name: 'HomeScreen');
+      try {
+        ref.read(gestureIntegrationProvider).initialize().then((_) {
+          developer.log('✓ Gesture integration service initialized successfully', name: 'HomeScreen');
+        }).catchError((e, st) {
+          developer.log(
+            '✗ Error initializing gesture service: $e',
+            name: 'HomeScreen',
+            error: e,
+            stackTrace: st,
+          );
+        });
+      } catch (e, st) {
+        developer.log(
+          '✗ Exception initializing gesture service: $e',
+          name: 'HomeScreen',
+          error: e,
+          stackTrace: st,
+        );
+      }
     });
   }
 

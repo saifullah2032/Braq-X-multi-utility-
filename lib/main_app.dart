@@ -4,15 +4,45 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants/app_colors.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/permission_service.dart';
 
 /// BARQ X Root Widget
-class BARQXApp extends StatelessWidget {
+class BARQXApp extends StatefulWidget {
   final bool showOnboarding;
 
   const BARQXApp({
     super.key,
     this.showOnboarding = false,
   });
+
+  @override
+  State<BARQXApp> createState() => _BARQXAppState();
+}
+
+class _BARQXAppState extends State<BARQXApp> {
+  late bool _showOnboarding;
+
+  @override
+  void initState() {
+    super.initState();
+    _showOnboarding = widget.showOnboarding;
+  }
+
+  void _completeOnboarding() async {
+    // Request permissions
+    await PermissionService.checkAndRequestPermissions();
+    
+    // Mark onboarding as complete
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_first_run', false);
+    
+    // Navigate to home
+    if (mounted) {
+      setState(() {
+        _showOnboarding = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,15 +114,9 @@ class BARQXApp extends StatelessWidget {
           ),
         ),
       ),
-      home: showOnboarding
-          ? OnboardingScreen(
-              onComplete: () async {
-                // Mark onboarding as complete
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('is_first_run', false);
-              },
-            )
-          : const HomeScreen(),
+      home: _showOnboarding
+           ? OnboardingScreen(onComplete: _completeOnboarding)
+           : const HomeScreen(),
     );
   }
 }

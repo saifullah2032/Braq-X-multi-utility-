@@ -44,7 +44,7 @@ class PermissionService {
   }
 
   /// Open app settings page
-  static Future<void> openAppSettings() async {
+  static Future<void> openAppSettingsPage() async {
     try {
       await openAppSettings();
     } catch (e) {
