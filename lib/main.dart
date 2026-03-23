@@ -7,11 +7,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize SharedPreferences for persistence
-  await SharedPreferences.getInstance();
+  final prefs = await SharedPreferences.getInstance();
+  
+  // Check if onboarding is complete
+  final isFirstRun = !prefs.containsKey('is_first_run') || prefs.getBool('is_first_run') != false;
   
   runApp(
-    const ProviderScope(
-      child: BARQXApp(),
+    ProviderScope(
+      child: BARQXApp(showOnboarding: isFirstRun),
     ),
   );
 }

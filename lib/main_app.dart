@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'constants/app_colors.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 /// BARQ X Root Widget
 class BARQXApp extends StatelessWidget {
-  const BARQXApp({super.key});
+  final bool showOnboarding;
+
+  const BARQXApp({
+    super.key,
+    this.showOnboarding = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +84,15 @@ class BARQXApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomeScreen(),
+      home: showOnboarding
+          ? OnboardingScreen(
+              onComplete: () async {
+                // Mark onboarding as complete
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('is_first_run', false);
+              },
+            )
+          : const HomeScreen(),
     );
   }
 }
