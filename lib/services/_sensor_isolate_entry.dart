@@ -175,7 +175,7 @@ void sensorIsolateEntry(SendPort sendPort) {
   }
 
   // Subscribe to accelerometer
-  accelSub = accelerometerEvents.listen((event) {
+  accelSub = accelerometerEventStream().listen((event) {
     final rawAccel = Vector3(event.x, event.y, event.z);
     final filteredAccel = rawAccel.applyFilter(accelFilter);
 
@@ -185,7 +185,7 @@ void sensorIsolateEntry(SendPort sendPort) {
   });
 
   // Subscribe to gyroscope
-  gyroSub = gyroscopeEvents.listen((event) {
+  gyroSub = gyroscopeEventStream().listen((event) {
     final rawGyro = Vector3(event.x, event.y, event.z);
     final filteredGyro = rawGyro.applyFilter(gyroFilter);
     detectTwist(filteredGyro);

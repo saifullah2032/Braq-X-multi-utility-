@@ -7,7 +7,7 @@ import '../models/gesture_event.dart';
 class HapticService {
   static Future<void> playGestureHaptic(GestureType gestureType) async {
     // Check if device supports vibration
-    final canVibrate = await Vibration.hasVibrator() ?? false;
+    final canVibrate = await Vibration.hasVibrator();
     if (!canVibrate) return;
 
     switch (gestureType) {
@@ -53,7 +53,7 @@ class HapticService {
 
   /// Play success feedback (two short vibrations)
   static Future<void> playSuccess() async {
-    final canVibrate = await Vibration.hasVibrator() ?? false;
+    final canVibrate = await Vibration.hasVibrator();
     if (!canVibrate) return;
 
     await Vibration.vibrate(duration: 100);
@@ -63,7 +63,7 @@ class HapticService {
 
   /// Play error feedback (one long vibration)
   static Future<void> playError() async {
-    final canVibrate = await Vibration.hasVibrator() ?? false;
+    final canVibrate = await Vibration.hasVibrator();
     if (!canVibrate) return;
 
     await Vibration.vibrate(duration: 300);

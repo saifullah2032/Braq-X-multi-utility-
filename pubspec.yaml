@@ -40,8 +40,8 @@ dependencies:
   riverpod_annotation: ^2.1.1
 
   # Sensors & Device Features
-  sensors_plus: ^1.4.0
-  vibration: ^1.8.3
+  sensors_plus: ^7.0.0
+  vibration: ^3.1.0
   light: ^5.0.0
 
   # Android Integration
