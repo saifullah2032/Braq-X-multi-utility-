@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'armed_provider.dart' show sharedPreferencesProvider;
+import 'shared_prefs_provider.dart';
 import '../models/gesture_settings.dart';
 import 'dart:convert';
 
@@ -71,16 +71,14 @@ class SettingsNotifier extends StateNotifier<GestureSettings> {
 }
 
 /// Riverpod provider for gesture settings
+/// 
+/// This provider watches the injected sharedPreferencesProvider,
+/// which is guaranteed to be initialized via ProviderScope.overrides
+/// in main.dart. Synchronous access, no async/await needed.
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, GestureSettings>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider).maybeWhen(
-        data: (prefs) => prefs,
-        orElse: () => null,
-      );
-
-  if (prefs == null) {
-    throw Exception('SharedPreferences not initialized');
-  }
-
+  // Access the injected SharedPreferences instance (synchronous)
+  final prefs = ref.watch(sharedPreferencesProvider);
+  
   return SettingsNotifier(prefs);
 });

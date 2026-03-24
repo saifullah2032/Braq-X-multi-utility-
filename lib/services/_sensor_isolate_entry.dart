@@ -1,13 +1,44 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../utils/low_pass_filter.dart';
 import '../constants/app_config.dart';
 
+/// ============================================================
+/// Background Sensor Isolate Entry Point
+/// 
+/// This isolate runs in a separate thread to monitor sensors at 50Hz
+/// without blocking the Flutter UI thread.
+/// 
+/// CRITICAL: This function receives RootIsolateToken to initialize
+/// BackgroundIsolateBinaryMessenger for platform channel communication.
+/// ============================================================
+
 /// Entry point for background sensor isolate
-/// Runs in a separate isolate to continuously monitor sensors
-/// Detects gestures and sends them back to main isolate via SendPort
-void sensorIsolateEntry(SendPort sendPort) {
+/// 
+/// Parameters:
+///   args - Named record containing:
+///     - mainReceivePort: SendPort to main isolate for gesture events
+///     - rootToken: RootIsolateToken for platform channel initialization
+void sensorIsolateEntry(
+  ({
+    SendPort mainReceivePort,
+    RootIsolateToken? rootToken,
+  }) args,
+) {
+  // ============================================================
+  // CRITICAL: Initialize BackgroundIsolateBinaryMessenger FIRST
+  // 
+  // This MUST be called before any sensor APIs are accessed.
+  // The token allows this isolate to communicate with the Flutter
+  // engine for platform channel calls (sensor access, permissions, etc.)
+  // ============================================================
+  if (args.rootToken != null) {
+    BackgroundIsolateBinaryMessenger.ensureInitialized(args.rootToken!);
+  }
+
+  final sendPort = args.mainReceivePort;
   // Initialize filters for noise reduction
   final accelFilter = LowPassFilter(alpha: AppConfig.lowPassFilterAlpha);
   final gyroFilter = LowPassFilter(alpha: AppConfig.lowPassFilterAlpha);

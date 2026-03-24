@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:light/light.dart';
 import '_sensor_isolate_entry.dart';
 import '../models/gesture_event.dart';
@@ -33,28 +34,56 @@ class SensorService {
 
   /// Initialize the sensor service
   /// Starts the background isolate and sets up streams
+  /// 
+  /// IMPORTANT: Captures RootIsolateToken and passes to background isolate
+  /// so it can call BackgroundIsolateBinaryMessenger.ensureInitialized()
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     _mainReceivePort = ReceivePort();
     _isolateStream = _mainReceivePort.asBroadcastStream();
 
-    // Spawn the background isolate
-    _sensorIsolate = await Isolate.spawn(
-      sensorIsolateEntry,
-      _mainReceivePort.sendPort,
-    );
+    try {
+      // Capture the RootIsolateToken from the current isolate
+      // This token is required for the background isolate to communicate
+      // with the Flutter engine (for sensor access)
+      final rootToken = RootIsolateToken.instance;
 
-    // Listen for messages from isolate
-    _isolateStream.listen(_handleIsolateMessage);
+      // Spawn the background isolate with BOTH:
+      // 1. The main ReceivePort (for gesture event communication)
+      // 2. The RootIsolateToken (for platform channel access)
+      _sensorIsolate = await Isolate.spawn(
+        sensorIsolateEntry,
+        (
+          mainReceivePort: _mainReceivePort.sendPort,
+          rootToken: rootToken,
+        ),
+      );
 
-    // Wait for isolate to send ready signal
-    await _waitForIsolateReady();
+      // Listen for messages from isolate
+      _isolateStream.listen(_handleIsolateMessage);
 
-    // Monitor light sensor (low frequency)
-    _startLightSensorMonitoring();
+      // Wait for isolate to send ready signal
+      await _waitForIsolateReady();
 
-    _isInitialized = true;
+      // Monitor light sensor (low frequency)
+      _startLightSensorMonitoring();
+
+      _isInitialized = true;
+
+      developer.log(
+        'Sensor service initialized with background isolate (RootIsolateToken passed)',
+        name: 'SensorService',
+      );
+    } catch (e, st) {
+      developer.log(
+        'Error initializing sensor service: $e',
+        name: 'SensorService',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
   }
 
   /// Wait for the isolate to initialize and send back its SendPort
