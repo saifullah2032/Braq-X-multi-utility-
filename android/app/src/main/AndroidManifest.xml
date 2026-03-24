@@ -1,4 +1,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ============================================================
+         BARQ X PERMISSION MANIFEST
+         
+         Required Permissions for 5-Protocol Gesture Detection:
+         1. CAMERA - For Inertial Twist (Camera launch)
+         2. ACCESS_NOTIFICATION_POLICY - For Surface Flip (DND control)
+         3. SYSTEM_ALERT_WINDOW - For overlay & background execution
+         4. VIBRATE - For haptic feedback on gesture triggers
+         5. SENSOR - For accelerometer, gyroscope, light sensors
+         
+         Additional: SCHEDULE_EXACT_ALARM for Android 12+ background survival
+         ============================================================ -->
+    
+    <!-- Gesture-Protocol Required Permissions -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    
+    <!-- Sensor & Feedback Permissions -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SENSOR" />
+    
+    <!-- Background Execution Permissions (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    
+    <!-- Optional but recommended for light sensor data -->
+    <uses-permission android:name="android.permission.BRIGHTNESS" />
+    
     <application
         android:label="barq_x"
         android:name="${applicationName}"
