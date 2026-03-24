@@ -8,10 +8,13 @@ import '../providers/settings_provider.dart';
 import '../services/gesture_integration_service.dart';
 import '../widgets/neo_brutalist_background.dart';
 import '../widgets/neo_brutalist_gesture_card.dart';
-import '../widgets/status_banner.dart';
+import '../widgets/sticker_badge.dart';
+import '../widgets/master_toggle_card.dart';
+import '../widgets/premium_fab.dart';
+import '../widgets/dashboard_footer.dart';
 
-/// Home screen dashboard - High-fidelity neo-brutalist design
-/// Master toggle + 5 gesture protocol cards with hard shadows and chunky borders
+/// Premium Single-Page Gesture-Utility Dashboard
+/// Soft Neo-Brutalism + 2D Comic/Sticker aesthetic
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -52,7 +55,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
-    // Cleanup on unmount
     ref.read(gestureIntegrationProvider).dispose();
     super.dispose();
   }
@@ -66,191 +68,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(AppConfig.screenPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header: Title + Subtitle
-                  _buildHeader(context, isArmed),
-                  const SizedBox(height: 24.0),
-
-                  // Master Toggle Button
-                  _buildMasterToggle(context, isArmed),
-                  const SizedBox(height: 32.0),
-
-                  // 5 Gesture Protocol Cards
-                  _buildGestureCard(
-                    context,
-                    emoji: '🔦',
-                    title: 'SHAKE PROTOCOL',
-                    description: 'KINETIC SHAKE',
-                    cardColor: AppColors.cardShake,
-                    isEnabled: settings.shakeEnabled && isArmed,
-                    onToggle: () async {
-                      await ref.read(settingsProvider.notifier).toggleShake();
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  _buildGestureCard(
-                    context,
-                    emoji: '📷',
-                    title: 'TWIST PROTOCOL',
-                    description: 'INERTIAL TWIST',
-                    cardColor: AppColors.cardTwist,
-                    isEnabled: settings.twistEnabled && isArmed,
-                    onToggle: () async {
-                      await ref.read(settingsProvider.notifier).toggleTwist();
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  _buildGestureCard(
-                    context,
-                    emoji: '🔕',
-                    title: 'FLIP PROTOCOL',
-                    description: 'SURFACE FLIP',
-                    cardColor: AppColors.cardFlip,
-                    isEnabled: settings.flipEnabled && isArmed,
-                    onToggle: () async {
-                      await ref.read(settingsProvider.notifier).toggleFlip();
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  _buildGestureCard(
-                    context,
-                    emoji: '⚡',
-                    title: 'STRIKE PROTOCOL',
-                    description: 'SECRET STRIKE',
-                    cardColor: AppColors.cardBackTap,
-                    isEnabled: settings.backTapEnabled && isArmed,
-                    onToggle: () async {
-                      await ref.read(settingsProvider.notifier).toggleBackTap();
-                    },
-                    onCustomAction: () {
-                      _showCustomActionSheet(context, ref);
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
-                  _buildGestureCard(
-                    context,
-                    emoji: '🛡️',
-                    title: 'POCKET SHIELD',
-                    description: 'PROTECTION ACTIVE',
-                    cardColor: AppColors.cardShield,
-                    isEnabled: settings.pocketShieldEnabled && isArmed,
-                    onToggle: () async {
-                      await ref.read(settingsProvider.notifier).togglePocketShield();
-                    },
-                  ),
-                  const SizedBox(height: 32.0),
-
-                  // Status Banner at bottom
-                  Center(
-                    child: StatusBanner(),
-                  ),
-                  const SizedBox(height: 16.0),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build header with title and subtitle
-  Widget _buildHeader(BuildContext context, bool isArmed) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'BARQ X',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                fontSize: 40,
-                letterSpacing: 2,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'GESTURE SYSTEM: ${isArmed ? 'ARMED' : 'DISARMED'}',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isArmed ? AppColors.masterToggleActive : AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.2,
-              ),
-        ),
-      ],
-    );
-  }
-
-  /// Build massive chunky master toggle button
-  Widget _buildMasterToggle(BuildContext context, bool isArmed) {
-    return GestureDetector(
-      onTap: () async {
-        await ref.read(armedProvider.notifier).toggle();
-      },
-      child: Stack(
-        children: [
-          // Hard shadow (8px offset)
-          Positioned(
-            left: 8,
-            top: 8,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.shadowColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-
-          // Main toggle button
-          Container(
-            height: AppConfig.masterToggleHeight,
-            padding: EdgeInsets.symmetric(
-              horizontal: AppConfig.masterTogglePadding,
-            ),
-            decoration: BoxDecoration(
-              color: isArmed ? AppColors.masterToggleActive : AppColors.background,
-              border: Border.all(
-                color: AppColors.borderPrimary,
-                width: 3.5, // Chunky 3.5px border
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isArmed ? 'BARQ X ARMED' : 'BARQ X DISARMED',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: isArmed ? Colors.white : AppColors.textPrimary,
+          child: Stack(
+            children: [
+              // Main scrollable content
+              SingleChildScrollView(
+                padding: EdgeInsets.all(AppConfig.screenPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header: Title
+                    Text(
+                      'BARQ X',
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        letterSpacing: 1.2,
+                        color: AppColors.textPrimary,
+                        fontSize: 44,
+                        letterSpacing: 3,
                       ),
+                    ),
+                    const SizedBox(height: 24.0),
+
+                    // Master Toggle Card
+                    MasterToggleCard(
+                      isArmed: isArmed,
+                      onToggle: () async {
+                        await ref.read(armedProvider.notifier).toggle();
+                      },
+                    ),
+                    const SizedBox(height: 32.0),
+
+                    // Gesture Protocols with Sticker Badge on first card
+                    Stack(
+                      children: [
+                        // Cards container
+                        Column(
+                          children: [
+                            // Card 1: Shake with Sticker Badge
+                            _buildGestureCard(
+                              context,
+                              emoji: '🔦',
+                              title: 'SHAKE PROTOCOL',
+                              description: 'KINETIC SHAKE',
+                              cardColor: AppColors.cardShake,
+                              isEnabled: settings.shakeEnabled && isArmed,
+                              onToggle: () async {
+                                await ref.read(settingsProvider.notifier).toggleShake();
+                              },
+                            ),
+                            const SizedBox(height: 16.0),
+
+                            // Card 2: Twist
+                            _buildGestureCard(
+                              context,
+                              emoji: '📷',
+                              title: 'TWIST PROTOCOL',
+                              description: 'INERTIAL TWIST',
+                              cardColor: AppColors.cardTwist,
+                              isEnabled: settings.twistEnabled && isArmed,
+                              onToggle: () async {
+                                await ref.read(settingsProvider.notifier).toggleTwist();
+                              },
+                            ),
+                            const SizedBox(height: 16.0),
+
+                            // Card 3: Flip
+                            _buildGestureCard(
+                              context,
+                              emoji: '🔕',
+                              title: 'FLIP PROTOCOL',
+                              description: 'SURFACE FLIP',
+                              cardColor: AppColors.cardFlip,
+                              isEnabled: settings.flipEnabled && isArmed,
+                              onToggle: () async {
+                                await ref.read(settingsProvider.notifier).toggleFlip();
+                              },
+                            ),
+                            const SizedBox(height: 16.0),
+
+                            // Card 4: Strike
+                            _buildGestureCard(
+                              context,
+                              emoji: '⚡',
+                              title: 'STRIKE PROTOCOL',
+                              description: 'SECRET STRIKE',
+                              cardColor: AppColors.cardBackTap,
+                              isEnabled: settings.backTapEnabled && isArmed,
+                              onToggle: () async {
+                                await ref.read(settingsProvider.notifier).toggleBackTap();
+                              },
+                              onCustomAction: () {
+                                _showCustomActionSheet(context, ref);
+                              },
+                            ),
+                            const SizedBox(height: 16.0),
+
+                            // Card 5: Shield
+                            _buildGestureCard(
+                              context,
+                              emoji: '🛡️',
+                              title: 'POCKET SHIELD',
+                              description: 'PROTECTION ACTIVE',
+                              cardColor: AppColors.cardShield,
+                              isEnabled: settings.pocketShieldEnabled && isArmed,
+                              onToggle: () async {
+                                await ref.read(settingsProvider.notifier).togglePocketShield();
+                              },
+                            ),
+                          ],
+                        ),
+
+                        // Sticker badge positioned on first card
+                        Positioned(
+                          right: -12,
+                          top: -8,
+                          child: StickerBadge(),
+                        ),
+                      ],
+                    ),
+
+                    // Footer
+                    DashboardFooter(),
+
+                    // Extra padding for FAB
+                    const SizedBox(height: 80.0),
+                  ],
                 ),
-                AnimatedRotation(
-                  turns: isArmed ? 0.5 : 0.0,
-                  duration: AppConfig.toggleTransitionDuration,
-                  child: Icon(
-                    Icons.power_settings_new,
-                    color: isArmed ? Colors.white : AppColors.textSecondary,
-                    size: 28.0,
-                  ),
+              ),
+
+              // Floating Action Button (bottom right)
+              Positioned(
+                bottom: 24,
+                right: 24,
+                child: PremiumFAB(
+                  onPressed: () {
+                    _showSettingsBottomSheet(context, ref);
+                  },
+                  backgroundColor: const Color(0xFFBCB1DE), // Lavender
+                  icon: Icons.settings,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -274,6 +233,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isEnabled: isEnabled,
       onToggle: onToggle,
       onCustomAction: onCustomAction,
+    );
+  }
+
+  /// Show settings bottom sheet from FAB
+  void _showSettingsBottomSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+        side: BorderSide(
+          color: AppColors.borderPrimary,
+          width: 3.5,
+        ),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SETTINGS',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 20.0),
+
+              // Settings options
+              _buildSettingItem(
+                context,
+                icon: '🎨',
+                title: 'About BARQ X',
+                subtitle: 'v2.0 • Neo-Brutalist Design',
+              ),
+              const SizedBox(height: 12.0),
+
+              _buildSettingItem(
+                context,
+                icon: '⚙️',
+                title: 'Gesture Sensitivity',
+                subtitle: 'Adjust detection thresholds',
+              ),
+              const SizedBox(height: 12.0),
+
+              _buildSettingItem(
+                context,
+                icon: '📊',
+                title: 'Statistics',
+                subtitle: 'View gesture usage',
+              ),
+              const SizedBox(height: 12.0),
+
+              _buildSettingItem(
+                context,
+                icon: '❓',
+                title: 'Help & Support',
+                subtitle: 'Learn more about gestures',
+              ),
+              const SizedBox(height: 24.0),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build individual setting item
+  Widget _buildSettingItem(
+    BuildContext context, {
+    required String icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: AppColors.borderPrimary,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 12.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondary,
+          ),
+        ],
+      ),
     );
   }
 
@@ -301,8 +376,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 'SELECT CUSTOM ACTION FOR STRIKE',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16.0),
               _buildActionOption(
@@ -387,9 +462,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Spacer(),
               if (isSelected)
