@@ -114,50 +114,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         floatingActionButton: _buildPremiumFAB(),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: SafeArea(
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(), // Lock dashboard - no scrolling
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20), // More aggressive side margins
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Tactical panel distribution
-              children: [
-                // ========================================
-                // 1. HEADER SECTION
-                // ========================================
-                _buildHeader(),
-                const SizedBox(height: 32), // More spacious after header
-
-                // ========================================
-                // 2. CARD 1: MAIN STATUS & ARMING (Blue)
-                // ========================================
-                _buildStatusCard(
-                  context,
-                  ref,
-                  isArmed: isArmed,
-                  isServiceRunning: isServiceRunning,
+          child: Stack(
+            children: [
+              // Main content with notebook gutter constraint
+              SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(), // Lock dashboard - no scrolling
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = constraints.maxWidth;
+                    return Padding(
+                      // Notebook Gutter Constraint: Everything starts after the red line
+                      padding: EdgeInsets.only(
+                        left: screenWidth * 0.15 + 16, // 15% + 16px buffer after gutter
+                        right: 16,
+                        top: 20,
+                        bottom: 20,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Tactical panel distribution
+                        children: [
+                          // ========================================
+                          // 1. HEADER SECTION (in gutter area)
+                          // ========================================
+                          _buildGutterTitle(),
+                          const SizedBox(height: 32), // More spacious after header
+                          // ========================================
+                          // 2. CARD 1: MAIN STATUS & ARMING (Blue)
+                          // ========================================
+                          _buildStatusCard(
+                            context,
+                            ref,
+                            isArmed: isArmed,
+                            isServiceRunning: isServiceRunning,
+                          ),
+                          const SizedBox(height: 20), // Consistent card spacing
+                          // ========================================
+                          // 3. CARD 2: GESTURE PALETTE (Peach)
+                          // ========================================
+                          _buildProtocolPaletteCard(settings),
+                          const SizedBox(height: 20), // Consistent card spacing
+                          // ========================================
+                          // 4. CARD 3: VERIFICATION CHECKLIST (Lavender)
+                          // ========================================
+                          _buildVerificationCard(settings),
+                          const SizedBox(height: 28), // More space before final section
+                          // ========================================
+                          // 5. RECENT TRIGGERS SECTION
+                          // ========================================
+                          _buildRecentTriggersSection(),
+                          const SizedBox(height: 100), // More space for FAB and scroll area
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 20), // Consistent card spacing
-
-                // ========================================
-                // 3. CARD 2: GESTURE PALETTE (Peach)
-                // ========================================
-                _buildProtocolPaletteCard(settings),
-                const SizedBox(height: 20), // Consistent card spacing
-
-                // ========================================
-                // 4. CARD 3: VERIFICATION CHECKLIST (Lavender)
-                // ========================================
-                _buildVerificationCard(settings),
-                const SizedBox(height: 28), // More space before final section
-
-                // ========================================
-                // 5. RECENT TRIGGERS SECTION
-                // ========================================
-                _buildRecentTriggersSection(),
-                
-                const SizedBox(height: 100), // More space for FAB and scroll area
-              ],
-            ),
+              ),
+              // Header Star: Absolute top-right positioning (not affected by gutter)
+              _buildAbsoluteHeaderStar(),
+            ],
           ),
         ),
       ),
@@ -165,41 +180,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 1. HEADER & TITLE - Systems Design Hierarchy
-  // Title: "BARQ X" only, Star positioned to absolute top-right
+  // 1. NOTEBOOK GUTTER HEADER - God-Tier UI/UX Architecture
+  // Title positioned in gutter area, Star absolute positioned as bookmark
   // ============================================================
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        // Title: "BARQ X" only with increased horizontal padding
-        Padding(
-          padding: const EdgeInsets.only(right: 80), // Create gap for star
-          child: const Text(
-            'BARQ X',
-            style: TextStyle(
-              fontFamily: 'Bebas Neue',
-              fontSize: 38, // Keep large bold uppercase style
-              fontWeight: FontWeight.bold,
-              height: 0.85, // Tighter line height for aggressive look
-              letterSpacing: 2.5, // Aggressive letter spacing
-              color: AppColors.textPrimary,
-            ),
-          ),
+  Widget _buildGutterTitle() {
+    return const Text(
+      'BARQ X', // Strictly "BARQ X" uppercase
+      style: TextStyle(
+        fontFamily: 'Bebas Neue',
+        fontSize: 38, // Keep large bold uppercase style
+        fontWeight: FontWeight.bold,
+        height: 0.85, // Tighter line height for aggressive look
+        letterSpacing: 2.5, // Aggressive letter spacing
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+
+  /// Absolute positioned header star - acts like a bookmark pinned to page edge
+  Widget _buildAbsoluteHeaderStar() {
+    return Positioned(
+      top: 20, // SafeArea top + padding
+      right: 16, // Right edge padding
+      child: Container(
+        padding: const EdgeInsets.all(12), // Generous padding
+        decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
+        child: const Icon(
+          Icons.star_rounded,
+          size: 28, // Maintain size for balance
+          color: AppColors.textPrimary,
         ),
-        // Star Icon: Absolute top-right positioning
-        Align(
-          alignment: Alignment.topRight,
-          child: Container(
-            padding: const EdgeInsets.all(12), // Generous padding
-            decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
-            child: const Icon(
-              Icons.star_rounded,
-              size: 28, // Maintain size for balance
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -229,14 +240,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           // Sticker Badge (overlapping corner)
-          const Positioned(
-            right: -6,
-            top: -6,
-            child: StickerBadge(),
-          ),
+          const Positioned(right: -6, top: -6, child: StickerBadge()),
           // Main tactical content with precise spacing
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Asymmetric padding for tactical hierarchy
+            padding: const EdgeInsets.fromLTRB(
+              24,
+              22,
+              24,
+              24,
+            ), // Asymmetric padding for tactical hierarchy
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -245,7 +257,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   'ACTIVE ENGINE:',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w900, // Heavier weight for tactical feel
+                    fontWeight:
+                        FontWeight.w900, // Heavier weight for tactical feel
                     letterSpacing: 1.2,
                     color: AppColors.textPrimary,
                   ),
@@ -265,11 +278,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 8), // Controlled spacing
                 // Status description with tactical formatting
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.1), // Subtle background for tactical readout
+                    color: Colors.black.withOpacity(
+                      0.1,
+                    ), // Subtle background for tactical readout
                     borderRadius: BorderRadius.zero,
-                    border: Border.all(color: Colors.black.withOpacity(0.2), width: 1),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     isArmed
@@ -308,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20, // More generous horizontal padding
-                      vertical: 14,   // Slightly taller for better tactile feel
+                      vertical: 14, // Slightly taller for better tactile feel
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -338,7 +359,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(width: 10),
                         Icon(
                           Icons.power_settings_new,
-                          color: isArmed ? Colors.red[700] : AppColors.textPrimary,
+                          color: isArmed
+                              ? Colors.red[700]
+                              : AppColors.textPrimary,
                           size: 22,
                         ),
                       ],
@@ -363,7 +386,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       width: double.infinity,
       decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Professional asymmetric padding
+      padding: const EdgeInsets.fromLTRB(
+        24,
+        22,
+        24,
+        24,
+      ), // Professional asymmetric padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -385,7 +413,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.1),
                   borderRadius: BorderRadius.zero,
-                  border: Border.all(color: Colors.black.withOpacity(0.2), width: 1),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   '$activeCount ACTIVE',
@@ -405,12 +436,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             spacing: 16, // More generous spacing between circles
             runSpacing: 16,
             children: [
-              // 1. SHAKE - Torch
+              // 1. THUNDER SPLASH - Mythological Torch
               _buildProtocolCircle(
                 icon: Icons.flashlight_on,
                 color: AppColors.cardShake,
                 isEnabled: settings.shakeEnabled,
                 onTap: () => ref.read(settingsProvider.notifier).toggleShake(),
+              ),
+              // 2. SWIRL TO ACTION - Mythological Camera  
+              _buildProtocolCircle(
+                icon: Icons.camera_alt,
+                color: AppColors.cardTwist,
+                isEnabled: settings.twistEnabled,
+                onTap: () => ref.read(settingsProvider.notifier).toggleTwist(),
+              ),
+              // 3. SKY FALLING DOWN - Mythological DND
+              _buildProtocolCircle(
+                icon: Icons.do_not_disturb_on,
+                color: AppColors.cardFlip,
+                isEnabled: settings.flipEnabled,
+                onTap: () => ref.read(settingsProvider.notifier).toggleFlip(),
+              ),
+              // 4. ZEUS STRIKE - Mythological Custom Action
+              _buildZeusStrikeCircle(settings),
+              // 5. VALKYRIE ARMOR - Mythological Protection
+              _buildProtocolCircle(
+                icon: Icons.shield,
+                color: AppColors.cardShield,
+                isEnabled: settings.pocketShieldEnabled,
+                onTap: () =>
+                    ref.read(settingsProvider.notifier).togglePocketShield(),
               ),
               // 2. TWIST - Camera
               _buildProtocolCircle(
@@ -427,13 +482,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onTap: () => ref.read(settingsProvider.notifier).toggleFlip(),
               ),
               // 4. SECRET STRIKE - Custom Action
-              _buildSecretStrikeCircle(settings),
+              _buildZeusStrikeCircle(settings),
               // 5. POCKET SHIELD - Protection
               _buildProtocolCircle(
                 icon: Icons.security,
                 color: AppColors.cardShield,
                 isEnabled: settings.pocketShieldEnabled,
-                onTap: () => ref.read(settingsProvider.notifier).togglePocketShield(),
+                onTap: () =>
+                    ref.read(settingsProvider.notifier).togglePocketShield(),
               ),
             ],
           ),
@@ -442,18 +498,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Secret Strike circle with special interaction and consistent border weight
-  /// Tap: Opens custom action selector bottom sheet
-  Widget _buildSecretStrikeCircle(dynamic settings) {
+  /// Zeus Strike circle with special interaction and consistent border weight
+  Widget _buildZeusStrikeCircle(dynamic settings) {
     return GestureDetector(
-      onTap: () => _showSecretStrikeActionSheet(context, settings),
+      onTap: () => _showZeusStrikeActionSheet(context, settings),
       child: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: settings.backTapEnabled ? AppColors.cardBackTap : Colors.grey[300],
+          color: settings.backTapEnabled
+              ? AppColors.cardBackTap
+              : Colors.grey[300],
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black, width: 3.5), // Consistent border weight
+          border: Border.all(
+            color: Colors.black,
+            width: 3.5,
+          ), // Consistent border weight
         ),
         child: Icon(
           Icons.touch_app,
@@ -479,7 +539,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           color: isEnabled ? color : Colors.grey[300],
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black, width: 3.5), // Consistent 3.5px border
+          border: Border.all(
+            color: Colors.black,
+            width: 3.5,
+          ), // Consistent 3.5px border
         ),
         child: Icon(
           icon,
@@ -504,12 +567,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // SECRET STRIKE CUSTOM ACTION BOTTOM SHEET
   // White background, 3.5px black border, 0px radius
   // ============================================================
-  void _showSecretStrikeActionSheet(BuildContext context, dynamic settings) {
+  void _showZeusStrikeActionSheet(BuildContext context, dynamic settings) {
     final currentAction = settings.backTapCustomAction;
-    
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Make transparent to show our custom container
+      backgroundColor:
+          Colors.transparent, // Make transparent to show our custom container
       isScrollControlled: true,
       builder: (context) {
         return Container(
@@ -548,7 +612,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Option 1: WhatsApp
                 _buildCustomActionOption(
                   context,
@@ -557,12 +621,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   value: 'whatsapp',
                   currentValue: currentAction,
                   onTap: () {
-                    ref.read(settingsProvider.notifier).setBackTapAction('whatsapp');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setBackTapAction('whatsapp');
                     Navigator.pop(context);
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Option 2: Google Assistant
                 _buildCustomActionOption(
                   context,
@@ -571,12 +637,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   value: 'assistant',
                   currentValue: currentAction,
                   onTap: () {
-                    ref.read(settingsProvider.notifier).setBackTapAction('assistant');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setBackTapAction('assistant');
                     Navigator.pop(context);
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Option 3: Media Player
                 _buildCustomActionOption(
                   context,
@@ -585,11 +653,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   value: 'media',
                   currentValue: currentAction,
                   onTap: () {
-                    ref.read(settingsProvider.notifier).setBackTapAction('media');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setBackTapAction('media');
                     Navigator.pop(context);
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -610,13 +680,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required VoidCallback onTap,
   }) {
     final isSelected = currentValue == value;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFB4D7F1) : Colors.transparent, // Sky Blue
+          color: isSelected
+              ? const Color(0xFFB4D7F1)
+              : Colors.transparent, // Sky Blue
           borderRadius: BorderRadius.zero, // 0px radius
           border: Border.all(color: Colors.black, width: 2),
         ),
@@ -650,7 +722,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       width: double.infinity,
       decoration: _brutalistDecoration(const Color(0xFFD7D4F1)), // Lavender
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Professional asymmetric padding
+      padding: const EdgeInsets.fromLTRB(
+        24,
+        22,
+        24,
+        24,
+      ), // Professional asymmetric padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -664,11 +741,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 18), // More generous spacing
-          _buildCheckItem('KINETIC SHAKE (TORCH)', settings.shakeEnabled),
-          _buildCheckItem('INERTIAL TWIST (CAMERA)', settings.twistEnabled),
-          _buildCheckItem('SURFACE FLIP (DND)', settings.flipEnabled),
-          _buildCheckItem('SECRET STRIKE (CUSTOM)', settings.backTapEnabled),
-          _buildCheckItem('POCKET SHIELD (PROTECTION)', settings.pocketShieldEnabled),
+          _buildCheckItem('THUNDER SPLASH', settings.shakeEnabled),
+          _buildCheckItem('SWIRL TO ACTION', settings.twistEnabled),
+          _buildCheckItem('SKY FALLING DOWN', settings.flipEnabled),
+          _buildCheckItem('ZEUS STRIKE', settings.backTapEnabled),
+          _buildCheckItem(
+            'VALKYRIE ARMOR',
+            settings.pocketShieldEnabled,
+          ),
         ],
       ),
     );
@@ -677,20 +757,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Enhanced check item with improved monospace formatting
   Widget _buildCheckItem(String text, bool checked) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0), // More generous vertical spacing
+      padding: const EdgeInsets.symmetric(
+        vertical: 6.0,
+      ), // More generous vertical spacing
       child: Row(
         children: [
           // Enhanced monospace checkbox with tactical background
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: checked 
+              color: checked
                   ? Colors.black.withOpacity(0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.zero,
               border: Border.all(
-                color: Colors.black.withOpacity(0.15), 
-                width: checked ? 1 : 0
+                color: Colors.black.withOpacity(0.15),
+                width: checked ? 1 : 0,
               ),
             ),
             child: Text(
@@ -712,8 +794,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.8,
-                color: checked 
-                    ? AppColors.textPrimary 
+                color: checked
+                    ? AppColors.textPrimary
                     : AppColors.textSecondary, // Visual state differentiation
               ),
             ),
@@ -724,79 +806,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 5. RECENT TRIGGERS - "THE ICON STICKER PILE"
-  // Scrapbook pile with positioned overlapping square stickers
+  // 5. RECENT TRIGGERS - "THE SPACED STICKER PILE"
+  // Horizontal row with mythological themes and precise 12px spacing
   // ============================================================
   Widget _buildRecentTriggersSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title: Bold, letterSpacing 2.0 for aggressive design
+        // Title: Bold, letterSpacing 2.0 for God-Tier design
         const Text(
           'RECENT TRIGGERS',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
-            letterSpacing: 2.0, // Wider spacing for aggressive design
+            letterSpacing: 2.0, // Wider spacing for mythological theme
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 16), // Space before sticker pile
-        // "Scrapbook Pile" using Stack with specific positioning
-        SizedBox(
-          height: 80, // Enough height for overlapping 60px stickers
-          child: Stack(
-            children: [
-              // Sticker 1: Position left: 0
-              Positioned(
-                left: 0,
-                child: _buildIconStickerCard(
-                  icon: Icons.flashlight_on,
-                  color: AppColors.cardShake, // Coral Red
-                ),
-              ),
-              // Sticker 2: Position left: 40, top: 5
-              Positioned(
-                left: 40,
-                top: 5,
-                child: _buildIconStickerCard(
-                  icon: Icons.notifications_off,
-                  color: AppColors.cardFlip, // Periwinkle
-                ),
-              ),
-              // Sticker 3: Position left: 80, bottom: 5
-              Positioned(
-                left: 80,
-                bottom: 5,
-                child: _buildIconStickerCard(
-                  icon: Icons.power_settings_new,
-                  color: AppColors.masterToggleActive, // Sky Blue/Mint
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 16), // Space before spaced sticker pile
+        // Horizontal row with Wrap - 12px spacing between 64x64 squares
+        Wrap(
+          spacing: 12, // Precise 12px spacing (not too stacked, not too far)
+          children: [
+            // THUNDER SPLASH - Mythological Torch 
+            _buildMythologicalStickerCard(
+              icon: Icons.flashlight_on,
+              color: AppColors.cardShake, // Coral Red
+            ),
+            // SWIRL TO ACTION - Mythological Camera
+            _buildMythologicalStickerCard(
+              icon: Icons.camera_alt,
+              color: AppColors.cardTwist, // Mint/Teal
+            ),
+            // SKY FALLING DOWN - Mythological DND
+            _buildMythologicalStickerCard(
+              icon: Icons.do_not_disturb_on,
+              color: AppColors.cardFlip, // Periwinkle
+            ),
+          ],
         ),
       ],
     );
   }
 
-  /// Icon sticker card - 60x60 square with 0px radius, 3.5px border, 6px shadow
-  /// Large centered icon only, no text, gesture-specific color background
-  Widget _buildIconStickerCard({
+  /// Mythological sticker card - 64x64 square with 0px radius, 3.5px border
+  /// Large 34px centered icon only, mythological color background
+  Widget _buildMythologicalStickerCard({
     required IconData icon,
     required Color color,
   }) {
     return Container(
-      width: 60,  // 60x60 square as specified
-      height: 60,
+      width: 64,  // 64x64 square as specified
+      height: 64,
       decoration: BoxDecoration(
-        color: color, // Gesture-specific color (Coral/Periwinkle/Mint)
+        color: color, // Mythological gesture-specific color
         borderRadius: BorderRadius.zero, // 0px radius sharp corners
         border: Border.all(color: Colors.black, width: 3.5), // 3.5px black border
         boxShadow: const [
           BoxShadow(
             color: Colors.black,
-            offset: Offset(6, 6), // 6px hard shadow
+            offset: Offset(6, 6), // Hard shadow for God-Tier visibility
             blurRadius: 0,
             spreadRadius: 0,
           ),
@@ -804,7 +873,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Icon(
         icon,
-        size: 32, // Large centered icon
+        size: 34, // Large 34px centered icon
         color: Colors.black, // Black icons for high contrast
       ),
     );
@@ -823,11 +892,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.zero, // 0px radius - perfect square
         side: BorderSide(color: Colors.black, width: 3.5),
       ),
-      child: const Icon(
-        Icons.add,
-        size: 30,
-        color: Colors.black,
-      ),
+      child: const Icon(Icons.add, size: 30, color: Colors.black),
     );
   }
 
@@ -838,7 +903,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showQuickActionsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Make transparent to show our custom container
+      backgroundColor:
+          Colors.transparent, // Make transparent to show our custom container
       isScrollControlled: true,
       builder: (context) {
         return Container(
