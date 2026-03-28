@@ -6,9 +6,11 @@ import '../providers/pocket_shield_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/action_handler.dart';
 import '../services/sensor_service.dart';
+import '../services/gesture_auditor.dart';
 
 /// Integrates gesture events with action execution
 /// Listens to gesture stream, filters by state, and executes actions
+/// Includes comprehensive logging for debugging triggers
 class GestureIntegrationService {
   final Ref ref;
 
@@ -49,15 +51,21 @@ class GestureIntegrationService {
     }
   }
 
-  /// Handle incoming gesture event
+  /// Handle incoming gesture event with comprehensive logging
   Future<void> _handleGestureEvent(GestureEvent gesture) async {
     try {
       // Check if armed
       final isArmed = ref.read(armedProvider);
       if (!isArmed) {
-        developer.log(
-          'Gesture ignored: BARQ X disarmed',
-          name: 'GestureIntegrationService',
+        GestureAuditor.logBlocked(
+          gesture: gesture.type.displayName,
+          reason: 'BARQ X is DISARMED - All gestures are inactive',
+          blockType: 'DISARMED',
+          context: {
+            'isArmed': false,
+            'gesture': gesture.type.displayName,
+            'timestamp': gesture.timestamp.toIso8601String(),
+          },
         );
         return;
       }
@@ -65,9 +73,16 @@ class GestureIntegrationService {
       // Check if pocket shield active
       final isPocketShielded = ref.read(pocketShieldProvider);
       if (isPocketShielded) {
-        developer.log(
-          'Gesture ignored: Pocket Shield active',
-          name: 'GestureIntegrationService',
+        GestureAuditor.logBlocked(
+          gesture: gesture.type.displayName,
+          reason: 'POCKET SHIELD is ACTIVE - Phone is in pocket/bag',
+          blockType: 'SHIELD',
+          context: {
+            'isPocketShielded': true,
+            'gesture': gesture.type.displayName,
+            'lightLevel': gesture.sensorData['light'] ?? 'N/A',
+            'proximityBlocked': gesture.sensorData['proximity'] ?? 'N/A',
+          },
         );
         return;
       }
@@ -78,20 +93,41 @@ class GestureIntegrationService {
       // Check if specific gesture enabled
       final isGestureEnabled = _isGestureEnabled(gesture.type, settings);
       if (!isGestureEnabled) {
-        developer.log(
-          'Gesture ignored: ${gesture.type} disabled in settings',
-          name: 'GestureIntegrationService',
+        GestureAuditor.logBlocked(
+          gesture: gesture.type.displayName,
+          reason: 'Gesture is DISABLED in settings',
+          blockType: 'DISABLED',
+          context: {
+            'gestureType': gesture.type.displayName,
+            'enabledInSettings': false,
+          },
         );
         return;
       }
 
-      // Execute action
-      developer.log(
-        'Executing action for gesture: ${gesture.type.displayName}',
-        name: 'GestureIntegrationService',
+      // Log detection before action execution
+      GestureAuditor.logDetection(
+        gestureType: gesture.type,
+        detectionReason: _getDetectionReason(gesture),
+        rawSensorValues: gesture.sensorData,
+        thresholds: _getThresholdsForGesture(gesture.type),
       );
 
-      await ActionHandler.handleGesture(gesture, settings);
+      // Execute action with result logging
+      final actionResult = await ActionHandler.handleGestureWithLogging(
+        gesture,
+        settings,
+      );
+
+      // Log complete trigger event
+      GestureAuditor.logTrigger(
+        gestureType: gesture.type,
+        triggerCause: _getDetectionReason(gesture),
+        sensorData: gesture.sensorData,
+        actionExecuted: actionResult['actionName'] ?? 'Unknown',
+        additionalInfo: actionResult['details'],
+      );
+
     } catch (e, stackTrace) {
       developer.log(
         'Error handling gesture: $e',
@@ -99,6 +135,87 @@ class GestureIntegrationService {
         error: e,
         stackTrace: stackTrace,
       );
+      
+      GestureAuditor.logActionResult(
+        gestureType: gesture.type,
+        actionName: 'GESTURE_HANDLER',
+        success: false,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  /// Get human-readable detection reason based on gesture type
+  String _getDetectionReason(GestureEvent gesture) {
+    switch (gesture.type) {
+      case GestureType.shake:
+        final magnitude = gesture.sensorData['magnitude'] ?? 'N/A';
+        final threshold = gesture.sensorData['threshold'] ?? '15.0';
+        return 'Accelerometer magnitude ($magnitude m/s²) exceeded shake threshold ($threshold m/s²)';
+      
+      case GestureType.twist:
+        final gyroZ = gesture.sensorData['gyroZ'] ?? 'N/A';
+        final threshold = gesture.sensorData['threshold'] ?? '5.0';
+        return 'Gyroscope Z-axis rotation ($gyroZ rad/s) exceeded twist threshold ($threshold rad/s)';
+      
+      case GestureType.flip:
+        final zAxis = gesture.sensorData['zAxis'] ?? 
+                      gesture.sensorData['accelZ'] ?? 'N/A';
+        final action = gesture.sensorData['action'] ?? 'TOGGLE';
+        
+        if (action == 'ENABLE_DND') {
+          return 'Phone flipped face-down (Z-axis: $zAxis m/s²) - Enabling DND';
+        } else if (action == 'DISABLE_DND') {
+          return 'Phone flipped face-up (Z-axis: $zAxis m/s²) - Disabling DND';
+        } else {
+          return 'Phone flipped (Z-axis: $zAxis m/s²) - Toggling DND';
+        }
+      
+      case GestureType.backTap:
+        final tapCount = gesture.sensorData['tapCount'] ?? '2';
+        final impactMagnitude = gesture.sensorData['impactMagnitude'] ?? 'N/A';
+        return 'Back-tap detected ($tapCount taps, impact: $impactMagnitude)';
+      
+      case GestureType.pocketShield:
+        final lightLevel = gesture.sensorData['light'] ?? 'N/A';
+        final proximity = gesture.sensorData['proximity'] ?? 'N/A';
+        return 'Pocket shield activated (light: $lightLevel lux, proximity: $proximity)';
+    }
+  }
+
+  /// Get threshold values for each gesture type (for logging)
+  Map<String, dynamic> _getThresholdsForGesture(GestureType type) {
+    switch (type) {
+      case GestureType.shake:
+        return {
+          'shakeThreshold': '15.0 m/s²',
+          'minDuration': '100ms',
+          'cooldown': '1000ms',
+        };
+      case GestureType.twist:
+        return {
+          'twistThreshold': '5.0 rad/s',
+          'minRotation': '90°',
+          'cooldown': '1500ms',
+        };
+      case GestureType.flip:
+        return {
+          'flipThreshold': '-9.0 m/s² (Z-axis)',
+          'holdDuration': '500ms',
+          'cooldown': '2000ms',
+        };
+      case GestureType.backTap:
+        return {
+          'tapThreshold': '20.0 m/s²',
+          'doubleTapWindow': '400ms',
+          'cooldown': '500ms',
+        };
+      case GestureType.pocketShield:
+        return {
+          'lightThreshold': '10 lux',
+          'proximityThreshold': 'near',
+          'activationDelay': '1000ms',
+        };
     }
   }
 

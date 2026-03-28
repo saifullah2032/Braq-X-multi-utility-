@@ -4,7 +4,7 @@ class GestureSettings {
   final bool twistEnabled;
   final bool flipEnabled;
   final bool backTapEnabled;
-  final String backTapCustomAction;
+  final String backTapCustomAction; // 'whatsapp', 'assistant', 'media'
   final bool pocketShieldEnabled;
   
   const GestureSettings({
@@ -12,7 +12,7 @@ class GestureSettings {
     this.twistEnabled = true,
     this.flipEnabled = true,
     this.backTapEnabled = true,
-    this.backTapCustomAction = 'whatsapp',
+    this.backTapCustomAction = 'assistant', // Default to Google Assistant
     this.pocketShieldEnabled = true,
   });
   
@@ -51,7 +51,7 @@ class GestureSettings {
       twistEnabled: json['twistEnabled'] as bool? ?? true,
       flipEnabled: json['flipEnabled'] as bool? ?? true,
       backTapEnabled: json['backTapEnabled'] as bool? ?? true,
-      backTapCustomAction: json['backTapCustomAction'] as String? ?? 'whatsapp',
+      backTapCustomAction: json['backTapCustomAction'] as String? ?? 'assistant',
       pocketShieldEnabled: json['pocketShieldEnabled'] as bool? ?? true,
     );
   }

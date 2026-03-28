@@ -8,15 +8,20 @@ class AppConfig {
   static const double shakeCooldownSeconds = 3.5;
   
   /// Inertial Twist (Camera)
-  static const double twistThreshold = 25.0;
+  static const double twistThreshold = 6.0; // Motorola-style double twist threshold
   static const double twistCooldownSeconds = 1.0;
   
   /// Surface Flip (DND - Face Down)
   static const double flipZThreshold = -9.5;
+  static const double flipDebounceSeconds = 0.5; // Must hold for 500ms before triggering
   
   /// Secret Strike (Back-Tap)
-  static const double backTapSpikeThreshold = 12.0;
+  static const double backTapSpikeThreshold = 15.0; // Increased from 12.0 to avoid shake interference
   static const int backTapWindowMilliseconds = 400;
+  static const double backTapCooldownSeconds = 1.0;
+  
+  /// Gesture Conflict Resolution
+  static const double shakeMutexDuration = 1.5; // Disable back-tap for 1.5s after shake
   
   /// Pocket Shield (Protective Mode)
   static const double pocketShieldLightThreshold = 10.0;
@@ -30,7 +35,7 @@ class AppConfig {
   
   // Haptic Feedback Patterns (milliseconds)
   static const List<int> hapticTorchPattern = [200];
-  static const List<int> hapticCameraPattern = [80, 40, 80];
+  static const List<int> hapticCameraPattern = [120, 80, 120]; // Double buzz: vibrate-pause-vibrate
   static const List<int> hapticDndPattern = [60, 30, 60, 30, 60];
   static const List<int> hapticBackTapPattern = [100];
   

@@ -15,7 +15,7 @@ class PremiumFAB extends StatefulWidget {
     required this.onPressed,
     this.backgroundColor = const Color(0xFFBCB1DE),
     this.iconColor = AppColors.textPrimary,
-    this.size = 64.0,
+    this.size = 56.0,
     this.icon = Icons.settings,
   });
 
@@ -29,30 +29,33 @@ class _PremiumFABState extends State<PremiumFAB> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) {
-        setState(() => _isPressed = true);
-      },
+      onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
         setState(() => _isPressed = false);
         widget.onPressed();
       },
-      onTapCancel: () {
-        setState(() => _isPressed = false);
-      },
-      child: Transform.translate(
-        offset: _isPressed ? const Offset(2, 2) : Offset.zero,
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        transform: Matrix4.translationValues(
+          _isPressed ? 4 : 0,
+          _isPressed ? 4 : 0,
+          0,
+        ),
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            // Hard shadow (10px offset, 10% opacity)
+            // Hard shadow
             Positioned(
+              left: 6,
+              top: 6,
               child: Container(
                 width: widget.size,
                 height: widget.size,
                 decoration: BoxDecoration(
-                  color: AppColors.shadowColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.zero, // Square
+                  color: AppColors.shadowColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                margin: const EdgeInsets.all(10),
               ),
             ),
 
@@ -64,16 +67,15 @@ class _PremiumFABState extends State<PremiumFAB> {
                 color: widget.backgroundColor,
                 border: Border.all(
                   color: AppColors.borderPrimary,
-                  width: 4,
+                  width: 3.5,
                 ),
-                borderRadius: BorderRadius.zero, // Sharp square corners
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Center(
                 child: Icon(
                   widget.icon,
                   color: widget.iconColor,
-                  size: 32,
-                  weight: 900,
+                  size: 28,
                 ),
               ),
             ),

@@ -1,81 +1,60 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// Neo-brutalist background with notebook grid pattern overlay
-/// Aged cream (#FFF8DE) with light blue grid (#D4F1F4) at 15% opacity
+/// Notebook Graph Paper Background - 100% Fidelity Implementation
+/// Features: Aged cream base, precise light blue grid, classic coral margin double-line
 class NeoBrutalistBackground extends StatelessWidget {
   final Widget child;
-  final double gridSize;
 
-  const NeoBrutalistBackground({
-    super.key,
-    required this.child,
-    this.gridSize = 20.0,
-  });
+  const NeoBrutalistBackground({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Base aged cream background
-        Container(
-          color: AppColors.background,
-        ),
-
-        // Grid pattern overlay (hair-like notebook grid at 15% opacity)
-        CustomPaint(
-          painter: GridPatternPainter(
-            gridSize: gridSize,
-            gridColor: AppColors.gridOverlay.withOpacity(0.15),
-          ),
-          size: Size.infinite,
-        ),
-
-        // Content on top
-        child,
-      ],
+    return Container(
+      color: AppColors.background, // #FFF8DE (Aged Cream)
+      child: CustomPaint(
+        painter: NotebookGridPainter(),
+        child: child,
+      ),
     );
   }
 }
 
-/// Paints a thin notebook grid pattern
-class GridPatternPainter extends CustomPainter {
-  final double gridSize;
-  final Color gridColor;
-
-  GridPatternPainter({
-    required this.gridSize,
-    required this.gridColor,
-  });
-
+/// High-fidelity notebook grid painter
+/// - Vertical Lines: Light Blue (#D4F1F4) at 15% opacity, 0.8px stroke, 25px spacing
+/// - Horizontal Lines: Same specs as vertical
+/// - Margin Line: Coral Red (#FF7B89) at 25% opacity, at 15% offset from left
+class NotebookGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 0.5; // Very thin lines for "hair-like" appearance
+    final gridPaint = Paint()
+      ..color = const Color(0xFFD4F1F4).withOpacity(0.15) // Light Blue 15%
+      ..strokeWidth = 0.8;
 
-    // Vertical lines
-    for (double i = 0; i < size.width; i += gridSize) {
-      canvas.drawLine(
-        Offset(i, 0),
-        Offset(i, size.height),
-        paint,
-      );
+    final marginPaint = Paint()
+      ..color = const Color(0xFFFF7B89).withOpacity(0.25) // Coral Red 25%
+      ..strokeWidth = 1.5;
+
+    const double spacing = 25.0; // Precise graph paper density
+
+    // Draw Vertical Lines
+    for (double i = 0; i < size.width; i += spacing) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), gridPaint);
     }
 
-    // Horizontal lines
-    for (double i = 0; i < size.height; i += gridSize) {
-      canvas.drawLine(
-        Offset(0, i),
-        Offset(size.width, i),
-        paint,
-      );
+    // Draw Horizontal Lines
+    for (double i = 0; i < size.height; i += spacing) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), gridPaint);
     }
+
+    // Draw Vertical Margin Line (Classic Notebook Style)
+    // Position: 15% offset from the left edge
+    double marginX = size.width * 0.15;
+    canvas.drawLine(Offset(marginX, 0), Offset(marginX, size.height), marginPaint);
+    // Double line for authentic notebook detail
+    canvas.drawLine(Offset(marginX + 3.5, 0), Offset(marginX + 3.5, size.height), marginPaint);
   }
 
   @override
-  bool shouldRepaint(GridPatternPainter oldDelegate) {
-    return oldDelegate.gridSize != gridSize ||
-        oldDelegate.gridColor != gridColor;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

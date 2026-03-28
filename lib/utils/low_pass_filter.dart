@@ -36,6 +36,62 @@ class LowPassFilter {
   }
 }
 
+/// High-Pass Filter for removing gravity and isolating dynamic motion
+/// Used for Motorola-style chop gesture detection
+class HighPassFilter {
+  final double alpha;
+  double _previousRawY = 0.0;
+  double _previousRawZ = 0.0;
+  double _previousFilteredY = 0.0;
+  double _previousFilteredZ = 0.0;
+  
+  HighPassFilter({this.alpha = 0.8});
+  
+  /// Apply high-pass filter to Y and Z axes to remove gravity
+  /// Returns (filteredY, filteredZ) containing only dynamic acceleration
+  (double, double) applyYZ(double rawY, double rawZ) {
+    // High-pass filter formula: y[i] = alpha * (y[i-1] + x[i] - x[i-1])
+    _previousFilteredY = alpha * (_previousFilteredY + rawY - _previousRawY);
+    _previousFilteredZ = alpha * (_previousFilteredZ + rawZ - _previousRawZ);
+    
+    _previousRawY = rawY;
+    _previousRawZ = rawZ;
+    
+    return (_previousFilteredY, _previousFilteredZ);
+  }
+  
+  void reset() {
+    _previousRawY = 0.0;
+    _previousRawZ = 0.0;
+    _previousFilteredY = 0.0;
+    _previousFilteredZ = 0.0;
+  }
+}
+
+/// High-Pass Filter for Z-axis only (Back-Tap / Secret Strike detection)
+/// Uses a sharper alpha for high-frequency impulse detection
+class ZAxisHighPassFilter {
+  final double alpha;
+  double _previousRawZ = 0.0;
+  double _previousFilteredZ = 0.0;
+  
+  ZAxisHighPassFilter({this.alpha = 0.9}); // Sharper filter for impulse detection
+  
+  /// Apply high-pass filter to Z-axis to isolate shock impulses
+  /// Returns filtered Z value containing only dynamic acceleration (no gravity)
+  double apply(double rawZ) {
+    // High-pass filter formula: y[i] = alpha * (y[i-1] + x[i] - x[i-1])
+    _previousFilteredZ = alpha * (_previousFilteredZ + rawZ - _previousRawZ);
+    _previousRawZ = rawZ;
+    return _previousFilteredZ;
+  }
+  
+  void reset() {
+    _previousRawZ = 0.0;
+    _previousFilteredZ = 0.0;
+  }
+}
+
 /// Vector3 helper class for 3D sensor data
 class Vector3 {
   final double x;
@@ -45,6 +101,9 @@ class Vector3 {
   Vector3(this.x, this.y, this.z);
   
   double get magnitude => sqrt(x * x + y * y + z * z);
+  
+  /// Magnitude using only Y and Z axes (ignoring X for chop detection)
+  double get magnitudeYZ => sqrt(y * y + z * z);
   
   Vector3 applyFilter(LowPassFilter filter) {
     final (filteredX, filteredY, filteredZ) =

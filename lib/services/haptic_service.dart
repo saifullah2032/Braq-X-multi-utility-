@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:vibration/vibration.dart';
 import '../constants/app_config.dart';
 import '../models/gesture_event.dart';
@@ -67,5 +68,28 @@ class HapticService {
     if (!canVibrate) return;
 
     await Vibration.vibrate(duration: 300);
+  }
+  
+  /// Play heavy impact feedback for Secret Strike detection
+  /// Single strong vibration to confirm the double-tap was detected
+  static Future<void> playHeavyImpact() async {
+    final canVibrate = await Vibration.hasVibrator();
+    if (!canVibrate) return;
+    
+    // Check if device supports amplitude control for true "heavy" impact
+    final hasAmplitudeControl = await Vibration.hasAmplitudeControl();
+    
+    if (hasAmplitudeControl == true) {
+      // Heavy impact with maximum amplitude (255)
+      await Vibration.vibrate(duration: 50, amplitude: 255);
+    } else {
+      // Fallback: Short but noticeable vibration
+      await Vibration.vibrate(duration: 80);
+    }
+    
+    developer.log(
+      '💥 HAPTIC: Heavy Impact played for Secret Strike',
+      name: 'HapticService',
+    );
   }
 }
