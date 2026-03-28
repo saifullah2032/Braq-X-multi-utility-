@@ -21,18 +21,18 @@ class NeoBrutalistBackground extends StatelessWidget {
 }
 
 /// High-fidelity notebook grid painter
-/// - Vertical Lines: Light Blue (#D4F1F4) at 15% opacity, 0.8px stroke, 25px spacing
+/// - Vertical Lines: Light Blue (#D4F1F4) at 38% opacity, 0.8px stroke, 25px spacing  
 /// - Horizontal Lines: Same specs as vertical
-/// - Margin Line: Coral Red (#FF7B89) at 25% opacity, at 15% offset from left
+/// - Margin Line: Coral Red (#FF7B89) at 45% opacity, at 15% offset from left
 class NotebookGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = const Color(0xFFD4F1F4).withOpacity(0.15) // Light Blue 15%
+      ..color = const Color(0xFFD4F1F4).withOpacity(0.38) // Light Blue 38% for clear visibility
       ..strokeWidth = 0.8;
 
     final marginPaint = Paint()
-      ..color = const Color(0xFFFF7B89).withOpacity(0.25) // Coral Red 25%
+      ..color = const Color(0xFFFF7B89).withOpacity(0.45) // Coral Red 45% for distinct margin
       ..strokeWidth = 1.5;
 
     const double spacing = 25.0; // Precise graph paper density

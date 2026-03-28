@@ -718,14 +718,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 5. RECENT TRIGGERS SECTION - Physical Overlapping Stickers
-  // High-fidelity overlapping effect with proper depth
+  // 5. RECENT TRIGGERS SECTION - Icon-Based Circular Cards
+  // Clean icon representation with proper Neo-Brutalist styling
   // ============================================================
   Widget _buildRecentTriggersSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title: Bold, letterSpacing 2.0 for more aggressive spacing
+        // Title: Bold, letterSpacing 2.0 for aggressive design
         const Text(
           'RECENT TRIGGERS',
           style: TextStyle(
@@ -735,80 +735,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 16), // More space before stickers
-        // Overlapping sticker stack - using Stack for precise positioning
-        SizedBox(
-          height: 65, // Fixed height for consistent overlapping
-          child: Stack(
-            children: [
-              // Sticker 1: SHAKE DETECTED (Base layer)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: _buildOverlappingTriggerNote(
-                  'SHAKE DETECTED', 
-                  AppColors.cardShake,
-                  rotation: -2.5, // Slight rotation for organic feel
-                ),
-              ),
-              // Sticker 2: DND ACTIVATED (Middle layer - overlaps first)
-              Positioned(
-                left: 120, // Overlap by 20px (140-20)
-                top: 8, // Slight vertical offset for layered effect
-                child: _buildOverlappingTriggerNote(
-                  'DND ACTIVATED', 
-                  AppColors.cardFlip,
-                  rotation: 1.8, // Counter-rotation
-                ),
-              ),
-              // Sticker 3: ENGINE ARMED (Top layer - overlaps second)
-              Positioned(
-                left: 240, // Overlap by 20px (120+140-20)
-                top: 2, // Different vertical offset
-                child: _buildOverlappingTriggerNote(
-                  'ENGINE ARMED', 
-                  AppColors.masterToggleActive,
-                  rotation: -1.2, // Slight rotation
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 16), // Space before trigger icons
+        // Icon-based trigger row aligned to left margin
+        Row(
+          children: [
+            // Trigger 1: SHAKE DETECTED (Torch)
+            _buildTriggerIconCard(
+              icon: Icons.flashlight_on,
+              color: AppColors.cardShake, // Coral Red
+            ),
+            const SizedBox(width: 12), // Spacing between icons
+            // Trigger 2: DND ACTIVATED (Notifications Off)
+            _buildTriggerIconCard(
+              icon: Icons.notifications_off,
+              color: AppColors.cardFlip, // Periwinkle
+            ),
+            const SizedBox(width: 12), // Spacing between icons
+            // Trigger 3: ENGINE ARMED (Power/Bolt)
+            _buildTriggerIconCard(
+              icon: Icons.power_settings_new,
+              color: AppColors.masterToggleActive, // Sky Blue
+            ),
+          ],
         ),
       ],
     );
   }
 
-  /// Overlapping trigger sticker with rotation and proper 8px shadow
-  /// Creates physical paper sticker effect with organic positioning
-  Widget _buildOverlappingTriggerNote(String text, Color color, {double rotation = 0}) {
-    return Transform.rotate(
-      angle: rotation * (3.14159 / 180), // Convert degrees to radians
-      child: Container(
-        width: 140,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.zero, // Sharp corners
-          border: Border.all(color: Colors.black, width: 3.5), // Consistent border weight
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black,
-              offset: Offset(8, 8), // Consistent 8px hard shadow
-              blurRadius: 0,
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-            height: 1.2, // Tighter line height
+  /// Icon-based trigger card - 56x56 square with gesture icon
+  /// Uses gesture-specific color backgrounds with 3.5px borders and 4px shadows
+  Widget _buildTriggerIconCard({
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.zero, // Sharp corners
+        border: Border.all(color: Colors.black, width: 3.5), // Consistent 3.5px border
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(4, 4), // 4px hard shadow for smaller cards
+            blurRadius: 0,
+            spreadRadius: 0,
           ),
-          textAlign: TextAlign.center,
-        ),
+        ],
+      ),
+      child: Icon(
+        icon,
+        size: 24,
+        color: Colors.black, // Black icons for high contrast
       ),
     );
   }
