@@ -431,74 +431,90 @@ class ActionHandler {
   }
 
   /// Launch WhatsApp with logging
-  /// Uses android_intent_plus with FLAG_ACTIVITY_NEW_TASK
+  /// Uses generic intent without hardcoded package to avoid permission denial
+  /// Falls back to generic messaging if WhatsApp unavailable
   static Future<String> _launchWhatsAppWithLogging() async {
     try {
+      // Primary: Try WhatsApp-specific intent without package restriction
       GestureAuditor.logIntentLaunch(
         action: 'WHATSAPP',
-        intentAction: 'android.intent.action.MAIN',
+        intentAction: 'android.intent.action.SEND',
         success: true,
-        packageName: AppConfig.whatsAppPackage,
+        packageName: null, // No hardcoded package - let system resolve
       );
       
       const AndroidIntent intent = AndroidIntent(
-        action: 'android.intent.action.MAIN',
-        package: AppConfig.whatsAppPackage,
+        action: 'android.intent.action.SEND',
+        type: 'text/plain',
         flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
       );
       await intent.launch();
       developer.log(
-        '💬 WHATSAPP: Launched via back-tap gesture (FLAG_ACTIVITY_NEW_TASK)',
+        '💬 WHATSAPP: Launched via back-tap gesture (generic SEND intent)',
         name: 'ActionHandler',
       );
-      return 'WhatsApp launched successfully';
+      return 'WhatsApp/Messaging app launched successfully';
     } catch (e) {
-      developer.log('Primary WhatsApp launch failed: $e', name: 'ActionHandler');
+      developer.log('Primary WhatsApp SEND intent failed: $e', name: 'ActionHandler');
       
       GestureAuditor.logIntentLaunch(
         action: 'WHATSAPP',
-        intentAction: 'android.intent.action.MAIN',
+        intentAction: 'android.intent.action.SEND',
         success: false,
-        packageName: AppConfig.whatsAppPackage,
+        packageName: null,
       );
       
       try {
-        // Fallback without component name
+        // Fallback: Try MAIN action for app drawer
+        GestureAuditor.logIntentLaunch(
+          action: 'WHATSAPP (fallback)',
+          intentAction: 'android.intent.action.MAIN',
+          success: true,
+          packageName: null,
+        );
+        
         const AndroidIntent fallbackIntent = AndroidIntent(
           action: 'android.intent.action.MAIN',
-          package: AppConfig.whatsAppPackage,
+          category: 'android.intent.category.APP_MESSAGING',
           flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
         );
         await fallbackIntent.launch();
-        developer.log('💬 WHATSAPP: Launched via fallback', name: 'ActionHandler');
-        return 'WhatsApp launched (fallback)';
+        developer.log('💬 WHATSAPP: Launched via messaging category fallback', name: 'ActionHandler');
+        return 'Messaging app launched (fallback)';
       } catch (e2) {
         developer.log('WhatsApp fallback failed: $e2', name: 'ActionHandler');
+        
+        GestureAuditor.logIntentLaunch(
+          action: 'WHATSAPP (fallback)',
+          intentAction: 'android.intent.action.MAIN',
+          success: false,
+          packageName: null,
+        );
+        
         return 'WhatsApp launch FAILED: $e2';
       }
     }
   }
 
   /// Launch Google Assistant with logging
-  /// Uses VOICE_COMMAND action with googlequicksearchbox package
+  /// Uses generic VOICE_COMMAND without hardcoded package to avoid permission denial
   static Future<String> _launchAssistantWithLogging() async {
     try {
-      // Primary: Use VOICE_COMMAND action
+      // Primary: Use VOICE_COMMAND action without package restriction
       GestureAuditor.logIntentLaunch(
         action: 'GOOGLE ASSISTANT',
         intentAction: 'android.intent.action.VOICE_COMMAND',
         success: true,
-        packageName: AppConfig.assistantPackage,
+        packageName: null, // No hardcoded package - let system resolve
       );
       
       const AndroidIntent intent = AndroidIntent(
         action: 'android.intent.action.VOICE_COMMAND',
-        package: AppConfig.assistantPackage,
         flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
       );
       await intent.launch();
       developer.log(
-        '🎤 ASSISTANT: Launched via VOICE_COMMAND intent',
+        '🎤 ASSISTANT: Launched via generic VOICE_COMMAND intent',
         name: 'ActionHandler',
       );
       return 'Google Assistant launched (VOICE_COMMAND)';
@@ -509,11 +525,11 @@ class ActionHandler {
         action: 'GOOGLE ASSISTANT',
         intentAction: 'android.intent.action.VOICE_COMMAND',
         success: false,
-        packageName: AppConfig.assistantPackage,
+        packageName: null,
       );
       
       try {
-        // Fallback 1: VOICE_ASSIST action (more generic)
+        // Fallback 1: VOICE_ASSIST action (more generic, system-wide)
         GestureAuditor.logIntentLaunch(
           action: 'GOOGLE ASSISTANT (fallback 1)',
           intentAction: 'android.intent.action.VOICE_ASSIST',
@@ -538,35 +554,7 @@ class ActionHandler {
           packageName: null,
         );
         
-        try {
-          // Fallback 2: Launch package directly
-          GestureAuditor.logIntentLaunch(
-            action: 'GOOGLE ASSISTANT (fallback 2)',
-            intentAction: 'android.intent.action.MAIN',
-            success: true,
-            packageName: AppConfig.assistantPackage,
-          );
-          
-          const AndroidIntent packageIntent = AndroidIntent(
-            action: 'android.intent.action.MAIN',
-            package: AppConfig.assistantPackage,
-            flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-          );
-          await packageIntent.launch();
-          developer.log('🎤 ASSISTANT: Launched via package', name: 'ActionHandler');
-          return 'Google Assistant launched (package fallback)';
-        } catch (e3) {
-          developer.log('Assistant package fallback failed: $e3', name: 'ActionHandler');
-          
-          GestureAuditor.logIntentLaunch(
-            action: 'GOOGLE ASSISTANT (fallback 2)',
-            intentAction: 'android.intent.action.MAIN',
-            success: false,
-            packageName: AppConfig.assistantPackage,
-          );
-          
-          return 'Assistant launch FAILED: $e3';
-        }
+        return 'Assistant launch FAILED: $e2';
       }
     }
   }

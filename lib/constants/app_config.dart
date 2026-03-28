@@ -3,12 +3,12 @@
 class AppConfig {
   // Sensor Thresholds (m/s², rad/s, lux, etc.)
   
-  /// Kinetic Shake (Torch)
-  static const double shakeThreshold = 16.0;
+  /// Kinetic Chop (Torch)
+  static const double shakeThreshold = 16.0; // Lowered from 20.0 to match natural user force
   static const double shakeCooldownSeconds = 3.5;
   
   /// Inertial Twist (Camera)
-  static const double twistThreshold = 6.0; // Motorola-style double twist threshold
+  static const double twistThreshold = 2.8; // Lowered from 6.0 rad/s - user naturally reaches this value
   static const double twistCooldownSeconds = 1.0;
   
   /// Surface Flip (DND - Face Down)

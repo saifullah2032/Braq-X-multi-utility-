@@ -138,6 +138,7 @@ void sensorIsolateEntry(SendPort mainSendPort) {
   StrikeSpike? firstStrikeSpike;  // First detected spike
   List<double> recentTotalMagnitudes = []; // For movement noise rejection (1 second window)
   DateTime? lastStrikeTriggerTime; // For cooldown tracking
+  DateTime? lastSpikeBounceTime; // De-bounce timer for strike echo rejection (150ms)
   
   // Store latest filtered accel for twist strike rejection
   Vector3? latestFilteredAccel;
@@ -800,11 +801,28 @@ void sensorIsolateEntry(SendPort mainSendPort) {
     // Only reject if OBVIOUS shaking/walking is detected (significantly higher than gravity + tap)
     // The Z-axis spike detection is prioritized - if Z-spike is strong, accept it regardless of X/Y noise
     final isStable = avgMagnitude < 45.0;
-    
+     
     // ============================================================
-    // SPIKE DETECTION - Z-axis spike > strikeThreshold m/s² 
+    // SPIKE DETECTION - Z-axis spike > strikeThreshold m/s²
+    // WITH STRIKE ECHO DE-BOUNCE (150ms)
     // ============================================================
     if (zAxisFiltered > strikeThreshold) {
+      // ============================================================
+      // STRIKE ECHO DE-BOUNCE - Prevent vibration echoes from being detected as second spike
+      // After detecting a spike, ignore all spikes for 150ms
+      // This filters out the 5-10ms vibration echoes but allows 200-450ms second tap
+      // ============================================================
+      if (lastSpikeBounceTime != null) {
+        final timeSinceLastSpike = now.difference(lastSpikeBounceTime!).inMilliseconds;
+        if (timeSinceLastSpike < 150) {
+          // Within de-bounce window - this is likely an echo, silently ignore
+          return; // Don't even log - this is the "vibration tail" of previous spike
+        }
+      }
+      
+      // Update the de-bounce timer for next spike
+      lastSpikeBounceTime = now;
+      
       // Detected a potential spike - send via SendPort
       mainSendPort.send({
         'type': 'debug_detection',
