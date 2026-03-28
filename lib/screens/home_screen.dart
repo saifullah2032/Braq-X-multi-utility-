@@ -116,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             physics: const ClampingScrollPhysics(), // Eliminates bounce/overscroll
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20), // More aggressive side margins
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -124,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 1. HEADER SECTION
                 // ========================================
                 _buildHeader(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32), // More spacious after header
 
                 // ========================================
                 // 2. CARD 1: MAIN STATUS & ARMING (Blue)
@@ -135,26 +135,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   isArmed: isArmed,
                   isServiceRunning: isServiceRunning,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20), // Consistent card spacing
 
                 // ========================================
                 // 3. CARD 2: GESTURE PALETTE (Peach)
                 // ========================================
                 _buildProtocolPaletteCard(settings),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20), // Consistent card spacing
 
                 // ========================================
                 // 4. CARD 3: VERIFICATION CHECKLIST (Lavender)
                 // ========================================
                 _buildVerificationCard(settings),
-                const SizedBox(height: 16), // Reduced from 24 to 16
+                const SizedBox(height: 28), // More space before final section
 
                 // ========================================
                 // 5. RECENT TRIGGERS SECTION
                 // ========================================
                 _buildRecentTriggersSection(),
                 
-                const SizedBox(height: 80), // Space for FAB only
+                const SizedBox(height: 100), // More space for FAB and scroll area
               ],
             ),
           ),
@@ -164,32 +164,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 1. HEADER & TITLE
-  // Row: Title + Spacer + Folder Icon
+  // 1. HEADER & TITLE - Professional Neo-Brutalist Hierarchy
+  // Optimized spacing and proportions for aggressive design
   // ============================================================
   Widget _buildHeader() {
     return Row(
       children: [
-        // Title: "BARQ X CONTROL\nCENTER"
+        // Title: "BARQ X CONTROL\nCENTER" with enhanced typography
         const Text(
           'BARQ X CONTROL\nCENTER',
           style: TextStyle(
             fontFamily: 'Bebas Neue',
-            fontSize: 36,
+            fontSize: 38, // Slightly larger for more presence
             fontWeight: FontWeight.bold,
-            height: 0.9,
-            letterSpacing: 2,
+            height: 0.85, // Tighter line height for aggressive stacking
+            letterSpacing: 2.5, // More aggressive letter spacing
             color: AppColors.textPrimary,
           ),
         ),
         const Spacer(),
-        // Star Icon: Peach container, 3.5px border, 8px shadow
+        // Star Icon: Enhanced Peach container with precise spacing
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12), // More generous padding
           decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
           child: const Icon(
             Icons.star_rounded,
-            size: 26,
+            size: 28, // Slightly larger for better balance
             color: AppColors.textPrimary,
           ),
         ),
@@ -198,8 +198,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 2. CARD 1: MAIN STATUS & ARMING (The Blue Card)
-  // Sky Blue (#B4D7F1), full-width Stack
+  // 2. CARD 1: MAIN STATUS & ARMING (Tactical Dashboard)
+  // Sky Blue (#B4D7F1), enhanced tactical spacing and hierarchy
   // ============================================================
   Widget _buildStatusCard(
     BuildContext context,
@@ -212,59 +212,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: _brutalistDecoration(const Color(0xFFB4D7F1)), // Sky Blue
       child: Stack(
         children: [
-          // Large bolt icon (far right, background)
+          // Large bolt icon (tactical background element)
           const Positioned(
-            right: 10,
-            top: 10,
+            right: 15,
+            top: 15,
             child: Icon(
               Icons.bolt,
-              size: 80,
-              color: Colors.white70,
+              size: 85, // Slightly larger for more presence
+              color: Colors.white60, // More subtle opacity for tactical feel
             ),
           ),
-          // Sticker Badge (top-right corner)
+          // Sticker Badge (overlapping corner)
           const Positioned(
-            right: -5,
-            top: -5,
+            right: -6,
+            top: -6,
             child: StickerBadge(),
           ),
-          // Main content
+          // Main tactical content with precise spacing
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Asymmetric padding for tactical hierarchy
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // "ACTIVE ENGINE:" label
+                // "ACTIVE ENGINE:" tactical label
                 const Text(
                   'ACTIVE ENGINE:',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900, // Heavier weight for tactical feel
+                    letterSpacing: 1.2,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                // "BARQ X GESTURE SYSTEM" title
+                const SizedBox(height: 6), // Tight spacing for hierarchy
+                // "BARQ X GESTURE SYSTEM" main title
                 const Text(
                   'BARQ X GESTURE SYSTEM',
                   style: TextStyle(
                     fontFamily: 'Bebas Neue',
-                    fontSize: 28,
+                    fontSize: 32, // Slightly larger for more impact
+                    letterSpacing: 1.5,
+                    height: 0.9,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                // Status description
-                Text(
-                  isArmed
-                      ? 'MASTERED KINETIC INTEGRATION'
-                      : 'SYSTEM STANDBY - DISARMED',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                const SizedBox(height: 8), // Controlled spacing
+                // Status description with tactical formatting
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.1), // Subtle background for tactical readout
+                    borderRadius: BorderRadius.zero,
+                    border: Border.all(color: Colors.black.withOpacity(0.2), width: 1),
+                  ),
+                  child: Text(
+                    isArmed
+                        ? 'MASTERED KINETIC INTEGRATION'
+                        : 'SYSTEM STANDBY - DISARMED',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Master Toggle Button (White, 0px radius, 8px shadow)
+                const SizedBox(height: 20), // More generous space before action
+                // Master Toggle Button (tactical command button)
                 GestureDetector(
                   onTap: () async {
                     await ref.read(armedProvider.notifier).toggle();
@@ -287,25 +301,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 20, // More generous horizontal padding
+                      vertical: 14,   // Slightly taller for better tactile feel
                     ),
-                    decoration: _brutalistDecoration(Colors.white),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.zero,
+                      border: Border.all(color: Colors.black, width: 3.5),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black,
+                          offset: Offset(8, 8), // Consistent 8px hard shadow
+                          blurRadius: 0,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           isArmed ? 'DISARM SYSTEM' : 'ARM ENGINE',
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                            fontSize: 13, // Slightly larger for readability
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.0,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Icon(
                           Icons.power_settings_new,
-                          color: isArmed ? Colors.red : AppColors.textPrimary,
-                          size: 20,
+                          color: isArmed ? Colors.red[700] : AppColors.textPrimary,
+                          size: 22,
                         ),
                       ],
                     ),
@@ -320,9 +348,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 3. CARD 2: GESTURE PALETTE (The Peach Card)
-  // Peach (#FFCCB6), sharp edges
-  // Secret Strike (touch_app) opens custom action selector
+  // 3. CARD 2: GESTURE PALETTE (Professional Peach Layout)
+  // Enhanced spacing and hierarchy for Neo-Brutalist precision
   // ============================================================
   Widget _buildProtocolPaletteCard(dynamic settings) {
     final activeCount = _countActiveProtocols(settings);
@@ -330,36 +357,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       width: double.infinity,
       decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Professional asymmetric padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          // Header row with enhanced typography
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'GESTURE PROTOCOLS',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900, // Heavier weight
+                  letterSpacing: 1.2,
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                '$activeCount ACTIVE',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textSecondary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.1),
+                  borderRadius: BorderRadius.zero,
+                  border: Border.all(color: Colors.black.withOpacity(0.2), width: 1),
+                ),
+                child: Text(
+                  '$activeCount ACTIVE',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Palette Grid: 5 circles
+          const SizedBox(height: 20), // More generous spacing
+          // Palette Grid: 5 circles with improved spacing
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 16, // More generous spacing between circles
+            runSpacing: 16,
             children: [
               // 1. SHAKE - Torch
               _buildProtocolCircle(
@@ -382,7 +420,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 isEnabled: settings.flipEnabled,
                 onTap: () => ref.read(settingsProvider.notifier).toggleFlip(),
               ),
-              // 4. SECRET STRIKE - Custom Action (Special: Long press for options)
+              // 4. SECRET STRIKE - Custom Action
               _buildSecretStrikeCircle(settings),
               // 5. POCKET SHIELD - Protection
               _buildProtocolCircle(
@@ -398,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Secret Strike circle with special interaction
+  /// Secret Strike circle with special interaction and consistent border weight
   /// Tap: Opens custom action selector bottom sheet
   Widget _buildSecretStrikeCircle(dynamic settings) {
     return GestureDetector(
@@ -409,7 +447,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           color: settings.backTapEnabled ? AppColors.cardBackTap : Colors.grey[300],
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: Colors.black, width: 3.5), // Consistent border weight
         ),
         child: Icon(
           Icons.touch_app,
@@ -420,6 +458,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// Enhanced protocol circle with consistent Neo-Brutalist borders
   Widget _buildProtocolCircle({
     required IconData icon,
     required Color color,
@@ -434,7 +473,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           color: isEnabled ? color : Colors.grey[300],
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: Colors.black, width: 3.5), // Consistent 3.5px border
         ),
         child: Icon(
           icon,
@@ -598,25 +637,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 4. CARD 3: VERIFICATION CHECKLIST (The Lavender Card)
-  // Lavender (#D7D4F1), sharp edges
+  // 4. CARD 3: VERIFICATION CHECKLIST (Professional Lavender Layout)
+  // Enhanced monospace formatting and tactical spacing
   // ============================================================
   Widget _buildVerificationCard(dynamic settings) {
     return Container(
       width: double.infinity,
       decoration: _brutalistDecoration(const Color(0xFFD7D4F1)), // Lavender
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 24), // Professional asymmetric padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'SYSTEM VERIFICATION',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              fontWeight: FontWeight.w900, // Consistent heavy weight
+              letterSpacing: 1.2,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18), // More generous spacing
           _buildCheckItem('KINETIC SHAKE (TORCH)', settings.shakeEnabled),
           _buildCheckItem('INERTIAL TWIST (CAMERA)', settings.twistEnabled),
           _buildCheckItem('SURFACE FLIP (DND)', settings.flipEnabled),
@@ -627,28 +668,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// Enhanced check item with improved monospace formatting
   Widget _buildCheckItem(String text, bool checked) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0), // More generous vertical spacing
       child: Row(
         children: [
-          Text(
-            checked ? '[X]' : '[ ]',
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: AppColors.textPrimary,
+          // Enhanced monospace checkbox with tactical background
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: checked 
+                  ? Colors.black.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.zero,
+              border: Border.all(
+                color: Colors.black.withOpacity(0.15), 
+                width: checked ? 1 : 0
+              ),
+            ),
+            child: Text(
+              checked ? '[X]' : '[ ]',
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
+                fontSize: 15, // Slightly larger for better readability
+                letterSpacing: 0.5,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12), // More generous spacing
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                letterSpacing: 0.8,
+                color: checked 
+                    ? AppColors.textPrimary 
+                    : AppColors.textSecondary, // Visual state differentiation
               ),
             ),
           ),
@@ -658,33 +718,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 5. RECENT TRIGGERS SECTION
-  // Title aligned with BARQ X header (left edge)
-  // Sticker row with 0 left padding for alignment
+  // 5. RECENT TRIGGERS SECTION - Physical Overlapping Stickers
+  // High-fidelity overlapping effect with proper depth
   // ============================================================
   Widget _buildRecentTriggersSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title: Bold, letterSpacing 1.5, left-aligned with header
+        // Title: Bold, letterSpacing 2.0 for more aggressive spacing
         const Text(
           'RECENT TRIGGERS',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
+            fontSize: 14,
+            letterSpacing: 2.0, // Wider spacing for aggressive design
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
-        // Sticker row: padding 0 on left for alignment
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero, // No left padding
-          child: Row(
+        const SizedBox(height: 16), // More space before stickers
+        // Overlapping sticker stack - using Stack for precise positioning
+        SizedBox(
+          height: 65, // Fixed height for consistent overlapping
+          child: Stack(
             children: [
-              _buildTriggerNote('SHAKE DETECTED', AppColors.cardShake),
-              _buildTriggerNote('DND ACTIVATED', AppColors.cardFlip),
-              _buildTriggerNote('ENGINE ARMED', AppColors.masterToggleActive),
+              // Sticker 1: SHAKE DETECTED (Base layer)
+              Positioned(
+                left: 0,
+                top: 0,
+                child: _buildOverlappingTriggerNote(
+                  'SHAKE DETECTED', 
+                  AppColors.cardShake,
+                  rotation: -2.5, // Slight rotation for organic feel
+                ),
+              ),
+              // Sticker 2: DND ACTIVATED (Middle layer - overlaps first)
+              Positioned(
+                left: 120, // Overlap by 20px (140-20)
+                top: 8, // Slight vertical offset for layered effect
+                child: _buildOverlappingTriggerNote(
+                  'DND ACTIVATED', 
+                  AppColors.cardFlip,
+                  rotation: 1.8, // Counter-rotation
+                ),
+              ),
+              // Sticker 3: ENGINE ARMED (Top layer - overlaps second)
+              Positioned(
+                left: 240, // Overlap by 20px (120+140-20)
+                top: 2, // Different vertical offset
+                child: _buildOverlappingTriggerNote(
+                  'ENGINE ARMED', 
+                  AppColors.masterToggleActive,
+                  rotation: -1.2, // Slight rotation
+                ),
+              ),
             ],
           ),
         ),
@@ -692,32 +778,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Trigger note sticker
-  /// 3.5px black border, 0px radius, 4px hard shadow
-  Widget _buildTriggerNote(String text, Color color) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.zero, // 0px radius - sharp corners
-        border: Border.all(color: Colors.black, width: 3.5),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black,
-            offset: Offset(4, 4), // 4px hard shadow
-            blurRadius: 0,
-            spreadRadius: 0,
+  /// Overlapping trigger sticker with rotation and proper 8px shadow
+  /// Creates physical paper sticker effect with organic positioning
+  Widget _buildOverlappingTriggerNote(String text, Color color, {double rotation = 0}) {
+    return Transform.rotate(
+      angle: rotation * (3.14159 / 180), // Convert degrees to radians
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.zero, // Sharp corners
+          border: Border.all(color: Colors.black, width: 3.5), // Consistent border weight
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black,
+              offset: Offset(8, 8), // Consistent 8px hard shadow
+              blurRadius: 0,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            height: 1.2, // Tighter line height
           ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          textAlign: TextAlign.center,
         ),
       ),
     );
