@@ -116,29 +116,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-              // Main content with notebook gutter constraint
+              // Main content with indented gutter rule
               SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(), // Lock dashboard - no scrolling
+                physics:
+                    const ClampingScrollPhysics(), // Updated to ClampingScrollPhysics for taller content
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final screenWidth = constraints.maxWidth;
                     return Padding(
-                      // Notebook Gutter Constraint: Everything starts after the red line
+                      // Indented Gutter Rule: ALL content shifted right of red margin (10% + 20px buffer)
                       padding: EdgeInsets.only(
-                        left: screenWidth * 0.15 + 16, // 15% + 16px buffer after gutter
+                        left:
+                            screenWidth * 0.10 +
+                            20, // 10% + 20px buffer after gutter
                         right: 16,
                         top: 20,
                         bottom: 20,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Tactical panel distribution
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // ========================================
-                          // 1. HEADER SECTION (in gutter area)
+                          // 1. HEADER SECTION (indented with gutter)
                           // ========================================
                           _buildGutterTitle(),
-                          const SizedBox(height: 32), // More spacious after header
+                          const SizedBox(
+                            height: 36,
+                          ), // "Squash" Fix: 36px between sections
                           // ========================================
                           // 2. CARD 1: MAIN STATUS & ARMING (Blue)
                           // ========================================
@@ -148,29 +153,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             isArmed: isArmed,
                             isServiceRunning: isServiceRunning,
                           ),
-                          const SizedBox(height: 20), // Consistent card spacing
+                          const SizedBox(
+                            height: 36,
+                          ), // "Squash" Fix: 36px between cards
                           // ========================================
                           // 3. CARD 2: GESTURE PALETTE (Peach)
                           // ========================================
                           _buildProtocolPaletteCard(settings),
-                          const SizedBox(height: 20), // Consistent card spacing
+                          const SizedBox(
+                            height: 36,
+                          ), // "Squash" Fix: 36px between cards
                           // ========================================
                           // 4. CARD 3: VERIFICATION CHECKLIST (Lavender)
                           // ========================================
-                          _buildVerificationCard(settings),
-                          const SizedBox(height: 28), // More space before final section
+                          /*_buildVerificationCard(settings),
+                          const SizedBox(
+                            height: 36,
+                          ),*/
+                          // "Squash" Fix: 36px before triggers
                           // ========================================
                           // 5. RECENT TRIGGERS SECTION
                           // ========================================
                           _buildRecentTriggersSection(),
-                          const SizedBox(height: 100), // More space for FAB and scroll area
+                          const SizedBox(
+                            height: 100,
+                          ), // Space for FAB and scroll area
                         ],
                       ),
                     );
                   },
                 ),
               ),
-              // Header Star: Absolute top-right positioning (not affected by gutter)
+              // Star Icon: Ignores gutter padding - absolute positioned
               _buildAbsoluteHeaderStar(),
             ],
           ),
@@ -188,9 +202,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'BARQ X', // Strictly "BARQ X" uppercase
       style: TextStyle(
         fontFamily: 'Bebas Neue',
-        fontSize: 38, // Keep large bold uppercase style
+        fontSize: 46, // Keep large bold uppercase style
         fontWeight: FontWeight.bold,
-        height: 0.85, // Tighter line height for aggressive look
+        height: 1.5, // Tighter line height for aggressive look
         letterSpacing: 2.5, // Aggressive letter spacing
         color: AppColors.textPrimary,
       ),
@@ -200,8 +214,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Absolute positioned header star - acts like a bookmark pinned to page edge
   Widget _buildAbsoluteHeaderStar() {
     return Positioned(
-      top: 20, // SafeArea top + padding
-      right: 16, // Right edge padding
+      top: 10, // Updated to exact specification
+      right: 10, // Updated to exact specification
       child: Container(
         padding: const EdgeInsets.all(12), // Generous padding
         decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
@@ -232,7 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Large bolt icon (tactical background element)
           const Positioned(
             right: 15,
-            top: 15,
+            top: 75,
             child: Icon(
               Icons.bolt,
               size: 85, // Slightly larger for more presence
@@ -263,19 +277,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 6), // Tight spacing for hierarchy
+                const SizedBox(height: 16), // Tight spacing for hierarchy
                 // "BARQ X GESTURE SYSTEM" main title
                 const Text(
                   'BARQ X GESTURE SYSTEM',
                   style: TextStyle(
                     fontFamily: 'Bebas Neue',
-                    fontSize: 32, // Slightly larger for more impact
+                    fontSize: 28, // Slightly larger for more impact
                     letterSpacing: 1.5,
                     height: 0.9,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8), // Controlled spacing
+                const SizedBox(height: 10), // Controlled spacing
                 // Status description with tactical formatting
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -377,8 +391,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 3. CARD 2: GESTURE PALETTE (Professional Peach Layout)
-  // Enhanced spacing and hierarchy for Neo-Brutalist precision
+  // 3. CARD 2: MYTHIC PROTOCOL LEGEND (Multi-Row Layout)
+  // Grid-style list with 42x42 icon boxes and mythic name labels
   // ============================================================
   Widget _buildProtocolPaletteCard(dynamic settings) {
     final activeCount = _countActiveProtocols(settings);
@@ -400,7 +414,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'GESTURE PROTOCOLS',
+                'MYTHIC PROTOCOL LEGEND',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w900, // Heavier weight
@@ -431,61 +445,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
           const SizedBox(height: 20), // More generous spacing
-          // Palette Grid: 5 circles with improved spacing
-          Wrap(
-            spacing: 16, // More generous spacing between circles
-            runSpacing: 16,
+          // Multi-row layout with text labels
+          Column(
             children: [
-              // 1. THUNDER SPLASH - Mythological Torch
-              _buildProtocolCircle(
+              // 1. BOLT IGNITION
+              _buildProtocolRow(
                 icon: Icons.flashlight_on,
+                label: 'BOLT IGNITION (Torch)',
                 color: AppColors.cardShake,
                 isEnabled: settings.shakeEnabled,
                 onTap: () => ref.read(settingsProvider.notifier).toggleShake(),
               ),
-              // 2. SWIRL TO ACTION - Mythological Camera  
-              _buildProtocolCircle(
+              const SizedBox(height: 12), // 12px spacing between protocol rows
+              // 2. HERMES SNAP
+              _buildProtocolRow(
                 icon: Icons.camera_alt,
+                label: 'HERMES SNAP (Camera)',
                 color: AppColors.cardTwist,
                 isEnabled: settings.twistEnabled,
                 onTap: () => ref.read(settingsProvider.notifier).toggleTwist(),
               ),
-              // 3. SKY FALLING DOWN - Mythological DND
-              _buildProtocolCircle(
-                icon: Icons.do_not_disturb_on,
-                color: AppColors.cardFlip,
-                isEnabled: settings.flipEnabled,
-                onTap: () => ref.read(settingsProvider.notifier).toggleFlip(),
-              ),
-              // 4. ZEUS STRIKE - Mythological Custom Action
-              _buildZeusStrikeCircle(settings),
-              // 5. VALKYRIE ARMOR - Mythological Protection
-              _buildProtocolCircle(
-                icon: Icons.shield,
-                color: AppColors.cardShield,
-                isEnabled: settings.pocketShieldEnabled,
-                onTap: () =>
-                    ref.read(settingsProvider.notifier).togglePocketShield(),
-              ),
-              // 2. TWIST - Camera
-              _buildProtocolCircle(
-                icon: Icons.camera_alt,
-                color: AppColors.cardTwist,
-                isEnabled: settings.twistEnabled,
-                onTap: () => ref.read(settingsProvider.notifier).toggleTwist(),
-              ),
-              // 3. FLIP - DND
-              _buildProtocolCircle(
+              const SizedBox(height: 12), // 12px spacing between protocol rows
+              // 3. HORIZON LOCK
+              _buildProtocolRow(
                 icon: Icons.notifications_off,
+                label: 'HORIZON LOCK (DND)',
                 color: AppColors.cardFlip,
                 isEnabled: settings.flipEnabled,
                 onTap: () => ref.read(settingsProvider.notifier).toggleFlip(),
               ),
-              // 4. SECRET STRIKE - Custom Action
-              _buildZeusStrikeCircle(settings),
-              // 5. POCKET SHIELD - Protection
-              _buildProtocolCircle(
+              const SizedBox(height: 12), // 12px spacing between protocol rows
+              // 4. OMEGA TRIGGER
+              _buildOmegaTriggerRow(settings),
+              const SizedBox(height: 12), // 12px spacing between protocol rows
+              // 5. GHOST VEIL
+              _buildProtocolRow(
                 icon: Icons.security,
+                label: 'GHOST VEIL (Pocket mode)',
                 color: AppColors.cardShield,
                 isEnabled: settings.pocketShieldEnabled,
                 onTap: () =>
@@ -498,10 +494,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Zeus Strike circle with special interaction and consistent border weight
-  Widget _buildZeusStrikeCircle(dynamic settings) {
+  /// Omega Trigger circle with special interaction and consistent border weight
+  Widget _buildOmegaTriggerCircle(dynamic settings) {
     return GestureDetector(
-      onTap: () => _showZeusStrikeActionSheet(context, settings),
+      onTap: () => _showOmegaTriggerActionSheet(context, settings),
       child: Container(
         width: 48,
         height: 48,
@@ -563,11 +559,103 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return count;
   }
 
+  /// Protocol row with 42x42 icon box and mythic name label
+  Widget _buildProtocolRow({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isEnabled,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          // 42x42 Icon Box with 2.5px black border
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isEnabled ? color : Colors.grey[300],
+              borderRadius: BorderRadius.zero, // 0px radius sharp corners
+              border: Border.all(
+                color: Colors.black,
+                width: 2.5, // 2.5px border as specified
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 24, // Appropriate icon size for 42x42 box
+              color: isEnabled ? Colors.black : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 16), // Spacing between icon and label
+          // Mythic Name Label
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14, // Size 14 as specified
+                fontWeight: FontWeight.bold, // Bold text
+                letterSpacing: 0.8,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Omega Trigger row with special interaction
+  Widget _buildOmegaTriggerRow(dynamic settings) {
+    return GestureDetector(
+      onTap: () => _showOmegaTriggerActionSheet(context, settings),
+      child: Row(
+        children: [
+          // 42x42 Icon Box with 2.5px black border
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: settings.backTapEnabled
+                  ? AppColors.cardBackTap
+                  : Colors.grey[300],
+              borderRadius: BorderRadius.zero, // 0px radius sharp corners
+              border: Border.all(
+                color: Colors.black,
+                width: 2.5, // 2.5px border as specified
+              ),
+            ),
+            child: Icon(
+              Icons.touch_app,
+              size: 24, // Appropriate icon size for 42x42 box
+              color: settings.backTapEnabled ? Colors.black : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 16), // Spacing between icon and label
+          // Mythic Name Label
+          const Expanded(
+            child: Text(
+              'OMEGA TRIGGER (Double Tap/Custom)',
+              style: TextStyle(
+                fontSize: 14, // Size 14 as specified
+                fontWeight: FontWeight.bold, // Bold text
+                letterSpacing: 0.8,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ============================================================
-  // SECRET STRIKE CUSTOM ACTION BOTTOM SHEET
+  // OMEGA TRIGGER CUSTOM ACTION BOTTOM SHEET
   // White background, 3.5px black border, 0px radius
   // ============================================================
-  void _showZeusStrikeActionSheet(BuildContext context, dynamic settings) {
+  void _showOmegaTriggerActionSheet(BuildContext context, dynamic settings) {
     final currentAction = settings.backTapCustomAction;
 
     showModalBottomSheet(
@@ -594,7 +682,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 // Header
                 const Text(
-                  'SECRET STRIKE ACTION',
+                  'OMEGA TRIGGER ACTION',
                   style: TextStyle(
                     fontFamily: 'Bebas Neue',
                     fontSize: 24,
@@ -714,7 +802,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // ============================================================
+  /*// ============================================================
   // 4. CARD 3: VERIFICATION CHECKLIST (Professional Lavender Layout)
   // Enhanced monospace formatting and tactical spacing
   // ============================================================
@@ -741,14 +829,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 18), // More generous spacing
-          _buildCheckItem('THUNDER SPLASH', settings.shakeEnabled),
-          _buildCheckItem('SWIRL TO ACTION', settings.twistEnabled),
-          _buildCheckItem('SKY FALLING DOWN', settings.flipEnabled),
-          _buildCheckItem('ZEUS STRIKE', settings.backTapEnabled),
-          _buildCheckItem(
-            'VALKYRIE ARMOR',
-            settings.pocketShieldEnabled,
-          ),
+          _buildCheckItem('BOLT IGNITION', settings.shakeEnabled),
+          _buildCheckItem('HERMES SNAP', settings.twistEnabled),
+          _buildCheckItem('HORIZON LOCK', settings.flipEnabled),
+          _buildCheckItem('OMEGA TRIGGER', settings.backTapEnabled),
+          _buildCheckItem('GHOST VEIL', settings.pocketShieldEnabled),
         ],
       ),
     );
@@ -803,7 +888,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   // ============================================================
   // 5. RECENT TRIGGERS - "THE SPACED STICKER PILE"
@@ -826,21 +911,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 16), // Space before spaced sticker pile
         // Horizontal row with Wrap - 12px spacing between 64x64 squares
         Wrap(
-          spacing: 12, // Precise 12px spacing (not too stacked, not too far)
+          spacing: 12, // 12px spacing as specified
+          runSpacing: 12, // Vertical spacing between rows
           children: [
-            // THUNDER SPLASH - Mythological Torch 
+            // BOLT IGNITION - Mythological Torch
             _buildMythologicalStickerCard(
               icon: Icons.flashlight_on,
               color: AppColors.cardShake, // Coral Red
             ),
-            // SWIRL TO ACTION - Mythological Camera
+            // HERMES SNAP - Mythological Camera
             _buildMythologicalStickerCard(
               icon: Icons.camera_alt,
               color: AppColors.cardTwist, // Mint/Teal
             ),
-            // SKY FALLING DOWN - Mythological DND
+            // HORIZON LOCK - Mythological DND
             _buildMythologicalStickerCard(
-              icon: Icons.do_not_disturb_on,
+              icon: Icons.notifications_off,
               color: AppColors.cardFlip, // Periwinkle
             ),
           ],
@@ -856,16 +942,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required Color color,
   }) {
     return Container(
-      width: 64,  // 64x64 square as specified
+      width: 64, // 64x64 square as specified
       height: 64,
       decoration: BoxDecoration(
         color: color, // Mythological gesture-specific color
         borderRadius: BorderRadius.zero, // 0px radius sharp corners
-        border: Border.all(color: Colors.black, width: 3.5), // 3.5px black border
+        border: Border.all(
+          color: Colors.black,
+          width: 3.5,
+        ), // 3.5px black border
         boxShadow: const [
           BoxShadow(
             color: Colors.black,
-            offset: Offset(6, 6), // Hard shadow for God-Tier visibility
+            offset: Offset(6, 6), // 6px shadow as specified
             blurRadius: 0,
             spreadRadius: 0,
           ),
@@ -873,7 +962,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Icon(
         icon,
-        size: 34, // Large 34px centered icon
+        size: 34, // 34px centered icon for 64x64 square
         color: Colors.black, // Black icons for high contrast
       ),
     );

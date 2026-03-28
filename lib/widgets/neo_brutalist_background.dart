@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// Wide-Ruled High-Visibility Notebook Page - God-Tier UI/UX Architecture
-/// Features: Aged cream base, high-visibility horizontal rules, prominent gutter margin
+/// High-Contrast Wide-Rule Notebook Page - Senior Flutter UI Engineering
+/// Features: Aged cream base, high-contrast horizontal rules, 10% gutter margin
 class NeoBrutalistBackground extends StatelessWidget {
   final Widget child;
 
@@ -12,40 +12,47 @@ class NeoBrutalistBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.background, // #FFF8DE (Aged Cream)
-      child: CustomPaint(
-        painter: HighVisibilityNotebookPainter(),
-        child: child,
-      ),
+      child: CustomPaint(painter: HighContrastWideRulePainter(), child: child),
     );
   }
 }
 
-/// High-visibility wide-ruled notebook painter - God-Tier specifications
-/// - Horizontal Lines: #D4F1F4 at 75% opacity, 1.5px stroke, 48px spacing
-/// - Vertical Gutter: Prominent double Coral Red (#FF7B89) at 60% opacity, 15% screen width
-class HighVisibilityNotebookPainter extends CustomPainter {
+/// High-contrast wide-ruled notebook painter - Senior UI Engineering specifications
+/// - Horizontal Lines ONLY: #D4F1F4 at 80% opacity, 1.8px stroke, 52px spacing
+/// - Red Gutter Margin: Double Coral Red (#FF7B89) at 60% opacity, exactly 10% screen width
+class HighContrastWideRulePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final horizontalLinePaint = Paint()
-      ..color = const Color(0xFFD4F1F4).withOpacity(0.75) // 75% opacity high visibility
-      ..strokeWidth = 1.5; // 1.5px stroke for prominence
+      ..color = const Color(0xFFD4F1F4)
+          .withOpacity(0.85) // 80% opacity high contrast
+      ..strokeWidth = 1.8; // 1.8px stroke for maximum visibility
 
     final gutterPaint = Paint()
-      ..color = const Color(0xFFFF7B89).withOpacity(0.60) // Coral Red 60% for solid prominence
+      ..color = const Color(0xFFFF7B89)
+          .withOpacity(0.70) // Coral Red 60% for gutter prominence
       ..strokeWidth = 1.5;
 
-    const double lineSpacing = 48.0; // Wide-ruled 48px spacing for God-Tier visibility
+    const double lineSpacing = 52.0; // Exactly 52px wide-ruled spacing
 
-    // Draw Horizontal Lines Only - Maximum visibility approach
+    // Draw Horizontal Lines ONLY - Remove all vertical grid lines
     for (double i = 0; i < size.height; i += lineSpacing) {
       canvas.drawLine(Offset(0, i), Offset(size.width, i), horizontalLinePaint);
     }
 
-    // Draw Prominent Double Vertical Gutter Margin (15% screen width)
-    double gutterX = size.width * 0.15; // Exactly 15% from left edge
-    canvas.drawLine(Offset(gutterX, 0), Offset(gutterX, size.height), gutterPaint);
+    // Draw Double Vertical Gutter Margin (exactly 10% from left edge)
+    double gutterX = size.width * 0.10; // Exactly 10% of total screen width
+    canvas.drawLine(
+      Offset(gutterX, 0),
+      Offset(gutterX, size.height),
+      gutterPaint,
+    );
     // Double line for prominent gutter effect
-    canvas.drawLine(Offset(gutterX + 4, 0), Offset(gutterX + 4, size.height), gutterPaint);
+    canvas.drawLine(
+      Offset(gutterX + 4, 0),
+      Offset(gutterX + 4, size.height),
+      gutterPaint,
+    );
   }
 
   @override
