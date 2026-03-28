@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
-import 'dart:math' as math;
 import '../constants/app_colors.dart';
 import '../providers/armed_provider.dart';
 import '../providers/settings_provider.dart';
@@ -12,69 +11,8 @@ import '../services/disarm_broadcast_service.dart';
 import '../widgets/neo_brutalist_background.dart';
 import '../widgets/sticker_badge.dart';
 
-/// Sticker shape enum for the Recent Triggers collection
-enum StickerShape { square, circle, star }
-
-/// Star shape painter for the sticker collection
-class StarShapePainter extends CustomPainter {
-  final Color color;
-
-  StarShapePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5;
-
-    final shadowPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 5; // Leave space for border
-
-    // Draw shadow first
-    final shadowPath = _createStarPath(center + const Offset(4, 4), radius);
-    canvas.drawPath(shadowPath, shadowPaint);
-
-    // Draw filled star
-    final starPath = _createStarPath(center, radius);
-    canvas.drawPath(starPath, paint);
-    canvas.drawPath(starPath, borderPaint);
-  }
-
-  Path _createStarPath(Offset center, double radius) {
-    final path = Path();
-    const double angle = math.pi / 5; // 36 degrees in radians
-    
-    // Create 5-point star
-    for (int i = 0; i < 10; i++) {
-      final double currentRadius = i.isEven ? radius : radius * 0.4;
-      final double x = center.dx + currentRadius * math.cos(i * angle - math.pi / 2);
-      final double y = center.dy + currentRadius * math.sin(i * angle - math.pi / 2);
-      
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 /// Premium Single-Page Gesture-Utility Dashboard
-/// 100% Fidelity Neo-Brutalism + 2D Comic/Sticker aesthetic
+/// 100% Fidelity Systems Design with wide-ruled notebook and icon sticker pile
 /// NO bottom navbar - FAB for settings access
 /// ALL corners: 0px radius (sharp edges)
 class HomeScreen extends ConsumerStatefulWidget {
@@ -227,32 +165,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 1. HEADER & TITLE - Professional Neo-Brutalist Hierarchy
-  // Optimized spacing and proportions for aggressive design
+  // 1. HEADER & TITLE - Systems Design Hierarchy
+  // Title: "BARQ X" only, Star positioned to absolute top-right
   // ============================================================
   Widget _buildHeader() {
-    return Row(
+    return Stack(
       children: [
-        // Title: "BARQ X CONTROL\nCENTER" with enhanced typography
-        const Text(
-          'BARQ X CONTROL\nCENTER',
-          style: TextStyle(
-            fontFamily: 'Bebas Neue',
-            fontSize: 38, // Slightly larger for more presence
-            fontWeight: FontWeight.bold,
-            height: 0.85, // Tighter line height for aggressive stacking
-            letterSpacing: 2.5, // More aggressive letter spacing
-            color: AppColors.textPrimary,
+        // Title: "BARQ X" only with increased horizontal padding
+        Padding(
+          padding: const EdgeInsets.only(right: 80), // Create gap for star
+          child: const Text(
+            'BARQ X',
+            style: TextStyle(
+              fontFamily: 'Bebas Neue',
+              fontSize: 38, // Keep large bold uppercase style
+              fontWeight: FontWeight.bold,
+              height: 0.85, // Tighter line height for aggressive look
+              letterSpacing: 2.5, // Aggressive letter spacing
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
-        // Star Icon: Enhanced Peach container with precise spacing
-        Container(
-          padding: const EdgeInsets.all(12), // More generous padding
-          decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
-          child: const Icon(
-            Icons.star_rounded,
-            size: 28, // Slightly larger for better balance
-            color: AppColors.textPrimary,
+        // Star Icon: Absolute top-right positioning
+        Align(
+          alignment: Alignment.topRight,
+          child: Container(
+            padding: const EdgeInsets.all(12), // Generous padding
+            decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
+            child: const Icon(
+              Icons.star_rounded,
+              size: 28, // Maintain size for balance
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ],
@@ -780,8 +724,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ============================================================
-  // 5. RECENT TRIGGERS - "THE STICKER COLLECTION"
-  // Overlapping shaped stickers with aggressive Neo-Brutalist styling
+  // 5. RECENT TRIGGERS - "THE ICON STICKER PILE"
+  // Scrapbook pile with positioned overlapping square stickers
   // ============================================================
   Widget _buildRecentTriggersSection() {
     return Column(
@@ -797,40 +741,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 16), // Space before sticker collection
-        // Overlapping sticker collection using Stack with Positioned
+        const SizedBox(height: 16), // Space before sticker pile
+        // "Scrapbook Pile" using Stack with specific positioning
         SizedBox(
-          height: 70, // Enough height for 60px stickers + overlap
+          height: 80, // Enough height for overlapping 60px stickers
           child: Stack(
             children: [
-              // Sticker 1: Square Shape - Chop Gesture (Coral)
+              // Sticker 1: Position left: 0
               Positioned(
                 left: 0,
-                top: 0,
-                child: _buildStickerShape(
-                  shape: StickerShape.square,
+                child: _buildIconStickerCard(
                   icon: Icons.flashlight_on,
                   color: AppColors.cardShake, // Coral Red
                 ),
               ),
-              // Sticker 2: Circle Shape - Twist Gesture (Mint/Periwinkle)
+              // Sticker 2: Position left: 40, top: 5
               Positioned(
-                left: 40, // 20px overlap with square
-                top: 10,
-                child: _buildStickerShape(
-                  shape: StickerShape.circle,
+                left: 40,
+                top: 5,
+                child: _buildIconStickerCard(
                   icon: Icons.notifications_off,
                   color: AppColors.cardFlip, // Periwinkle
                 ),
               ),
-              // Sticker 3: Star Shape - Strike Gesture (Sky Blue)
+              // Sticker 3: Position left: 80, bottom: 5
               Positioned(
-                left: 80, // 20px overlap with circle
-                top: 5,
-                child: _buildStickerShape(
-                  shape: StickerShape.star,
+                left: 80,
+                bottom: 5,
+                child: _buildIconStickerCard(
                   icon: Icons.power_settings_new,
-                  color: AppColors.masterToggleActive, // Sky Blue
+                  color: AppColors.masterToggleActive, // Sky Blue/Mint
                 ),
               ),
             ],
@@ -840,75 +780,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Build shaped sticker for the collection - random shapes with 32px icons
-  Widget _buildStickerShape({
-    required StickerShape shape,
+  /// Icon sticker card - 60x60 square with 0px radius, 3.5px border, 6px shadow
+  /// Large centered icon only, no text, gesture-specific color background
+  Widget _buildIconStickerCard({
     required IconData icon,
     required Color color,
   }) {
-    Widget shapeWidget;
-    
-    switch (shape) {
-      case StickerShape.square:
-        shapeWidget = Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.zero, // Sharp square corners
-            border: Border.all(color: Colors.black, width: 3.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black,
-                offset: Offset(4, 4),
-                blurRadius: 0,
-                spreadRadius: 0,
-              ),
-            ],
+    return Container(
+      width: 60,  // 60x60 square as specified
+      height: 60,
+      decoration: BoxDecoration(
+        color: color, // Gesture-specific color (Coral/Periwinkle/Mint)
+        borderRadius: BorderRadius.zero, // 0px radius sharp corners
+        border: Border.all(color: Colors.black, width: 3.5), // 3.5px black border
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(6, 6), // 6px hard shadow
+            blurRadius: 0,
+            spreadRadius: 0,
           ),
-          child: Icon(icon, size: 32, color: Colors.black),
-        );
-        break;
-      case StickerShape.circle:
-        shapeWidget = Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.black, width: 3.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black,
-                offset: Offset(4, 4),
-                blurRadius: 0,
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Icon(icon, size: 32, color: Colors.black),
-        );
-        break;
-      case StickerShape.star:
-        // Create star using CustomPaint
-        shapeWidget = CustomPaint(
-          size: const Size(60, 60),
-          painter: StarShapePainter(color: color),
-          child: SizedBox(
-            width: 60,
-            height: 60,
-            child: Center(
-              child: Icon(icon, size: 32, color: Colors.black),
-            ),
-          ),
-        );
-        break;
-    }
-    
-    return shapeWidget;
+        ],
+      ),
+      child: Icon(
+        icon,
+        size: 32, // Large centered icon
+        color: Colors.black, // Black icons for high contrast
+      ),
+    );
   }
-
-
 
   // ============================================================
   // PREMIUM FAB

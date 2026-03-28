@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// BARQ-X "Slapped-On" Sticker Badge - Aggressive Neo-Brutalist Design
-/// Large yellow label with dramatic -8.5° tilt for authentic hand-applied look
+/// BARQ-X "Slapped-On" Sticker Badge - Systems Design Branding
+/// Scaled 50% larger with aggressive -11° tilt and bold typography filling 80% height
 class StickerBadge extends StatelessWidget {
   final String text;
   final double rotationRadians;
@@ -11,7 +11,7 @@ class StickerBadge extends StatelessWidget {
   const StickerBadge({
     super.key,
     this.text = 'BARQ-X',
-    this.rotationRadians = -0.15, // -0.15 radians for dramatic -8.5° slapped-on tilt
+    this.rotationRadians = -0.2, // -0.2 radians for aggressive -11° slapped-on tilt
     this.backgroundColor = const Color(0xFFFFF2C6), // Yellow/Cream
     this.textColor = Colors.black,
   });
@@ -19,10 +19,10 @@ class StickerBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.rotate(
-      angle: rotationRadians, // Aggressive -8.5° rotation
+      angle: rotationRadians, // Aggressive -11° rotation
       child: Container(
-        width: 100, // Fixed 100px width
-        height: 36, // Fixed 36px height  
+        width: 150, // 50% scale increase from 100px to 150px
+        height: 54,  // 50% scale increase from 36px to 54px
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.zero, // 0px radius for sharp edges
@@ -34,7 +34,7 @@ class StickerBadge extends StatelessWidget {
           boxShadow: const [
             BoxShadow(
               color: Colors.black,
-              offset: Offset(4, 4), // 4px hard shadow
+              offset: Offset(6, 6), // Scaled shadow 4px → 6px
               blurRadius: 0,
               spreadRadius: 0,
             ),
@@ -45,9 +45,9 @@ class StickerBadge extends StatelessWidget {
             text.toUpperCase(), // ALL CAPS for aggressive branding
             style: const TextStyle(
               color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 20, // Bold 20px typography
-              letterSpacing: 1.2, // Aggressive letterSpacing
+              fontWeight: FontWeight.w900, // Very bold - heaviest weight
+              fontSize: 30, // Scaled from 20px to 30px (50% increase) - fills 80% of 54px height
+              letterSpacing: 1.8, // Scaled letter spacing
             ),
             textAlign: TextAlign.center,
           ),
