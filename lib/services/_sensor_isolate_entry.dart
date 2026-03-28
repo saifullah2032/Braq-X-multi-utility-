@@ -139,284 +139,303 @@ void sensorIsolateEntry(SendPort mainSendPort) {
   List<double> recentTotalMagnitudes = []; // For movement noise rejection (1 second window)
   DateTime? lastStrikeTriggerTime; // For cooldown tracking
   DateTime? lastSpikeBounceTime; // De-bounce timer for strike echo rejection (150ms)
+  DateTime? firstStrikeBlankingWindowStart; // Start of 60ms blanking window after first tap (filters vibration)
   
   // Store latest filtered accel for twist strike rejection
   Vector3? latestFilteredAccel;
+  
+  // Store latest filtered gyro for gyro-blocking strike detection
+  Vector3? latestFilteredGyro;
 
-  /// Motorola-Style Chop Gesture Detection (Torch)
-  /// 
-  /// Axis-Specific Detection:
-  /// - IGNORES X-axis (horizontal side-to-side movement)
-  /// - Focuses on Y-axis (lengthwise) and Z-axis (depth)
-  /// - Uses high-pass filter to remove gravity, isolate dynamic motion
-  /// 
-  /// Chop Signature:
-  /// - Rapid positive spike (>chopThreshold) followed by negative spike
-  /// - Both spikes must occur within 150ms window
-  /// - Directional validation ensures it's a "chop and stop" motion
-  /// 
-  /// Twist-Gesture Rejection:
-  /// - If Gyro Y-axis >4.0 rad/s, block torch for 500ms
-  /// - Prevents camera twist from accidentally triggering torch
-  /// 
-  /// Debounce:
-  /// - After successful chop, ignore all input for 1 second
-  /// - Prevents back-swing from toggling torch off immediately
-  void detectShake(Vector3 accel) {
-    // Configurable threshold from AppConfig (default: 16.0, but we use 20.0 for chop detection)
-    const double chopThreshold = 20.0; // Lower than 30.0 for better detection
-    
-    // ============================================================
-    // GLOBAL LOCK CHECK
-    // ============================================================
-    if (_globalLockActive) {
-      // Log when blocked by global lock
-      GestureAuditor.logBlocked(
-        gesture: 'KINETIC_CHOP',
-        reason: 'Global mutex lock active (800ms after last gesture)',
-        blockType: 'MUTEX',
-        context: {'accelMagnitude': accel.magnitude.toStringAsFixed(2)},
-      );
-      return;
-    }
-    
-    // ============================================================
-    // POCKET SHIELD GATE - Silent fail when in pocket
-    // ============================================================
-    if (_isCurrentlyShielded) {
-      // Log blocked gesture (silent - no haptics)
-      final (highPassY, highPassZ) = chopHighPassFilter.applyYZ(accel.y, accel.z);
-      final dynamicMagnitudeYZ = sqrt(highPassY * highPassY + highPassZ * highPassZ);
-      
-      // Only log if this would have been a significant motion
-      if (dynamicMagnitudeYZ > 25.0) {
-        GestureAuditor.logSensorSnapshot(
-          gesture: 'KINETIC_CHOP',
-          sensorData: {
-            'dynamicYZ': dynamicMagnitudeYZ.toStringAsFixed(2),
-            'proximityNear': _isProximityNear.toString(),
-            'lux': _currentLux.toStringAsFixed(1),
-          },
-          reason: '[SHIELD] Gesture Blocked: ${_isProximityNear ? "Proximity Near" : "Lux Low"}. Battery Saved.',
-        );
-      }
-      return;
-    }
-    
-    final now = DateTime.now();
-    
-    // ============================================================
-    // 1-SECOND DEBOUNCE AFTER SUCCESSFUL CHOP
-    // ============================================================
-    if (lastChopTriggerTime != null) {
-      final timeSinceChop = now.difference(lastChopTriggerTime!).inMilliseconds / 1000.0;
-      if (timeSinceChop < 1.0) {
-        // Still in debounce period, ignore all sensor input
-        GestureAuditor.logCooldown(
-          gesture: 'KINETIC_CHOP',
-          remainingSeconds: 1.0 - timeSinceChop,
-          blockedReason: 'In 1-second post-trigger debounce period',
-        );
-        return;
-      }
-    }
-    
-    // ============================================================
-    // TWIST-GESTURE REJECTION (500ms block)
-    // ============================================================
-    if (lastTwistBlockTime != null) {
-      final timeSinceBlock = now.difference(lastTwistBlockTime!).inMilliseconds / 1000.0;
-      if (timeSinceBlock < 0.5) {
-        // Still blocked by twist gesture
-        GestureAuditor.logBlocked(
-          gesture: 'KINETIC_CHOP',
-          reason: 'Blocked by twist motion (gyro Y > 4.0 rad/s detected recently)',
-          blockType: 'MUTEX',
-          context: {'timeSinceBlock': '${(timeSinceBlock * 1000).toStringAsFixed(0)}ms'},
-        );
-        return;
-      }
-    }
-    
-    // ============================================================
-    // HIGH-PASS FILTER: Remove gravity, isolate dynamic motion
-    // ============================================================
-    final (highPassY, highPassZ) = chopHighPassFilter.applyYZ(accel.y, accel.z);
-    
-    // ============================================================
-    // AXIS-SPECIFIC SIGNATURE: Focus on Y/Z, IGNORE X
-    // ============================================================
-    // Calculate jerk (rate of change) on Y and Z axes only
-    final dynamicMagnitudeYZ = sqrt(highPassY * highPassY + highPassZ * highPassZ);
-    
-    // Live Math logging - show progress toward threshold
-    if (dynamicMagnitudeYZ > 10.0) {
-      // Send debug message through SendPort (print() doesn't work in isolates!)
-      mainSendPort.send({
-        'type': 'debug_gesture_progress',
-        'gesture': 'CHOP',
-        'current': dynamicMagnitudeYZ,
-        'threshold': chopThreshold,
-        'progress': (dynamicMagnitudeYZ / chopThreshold * 100).clamp(0, 100),
-        'note': chopPositiveSpikeTime != null ? 'Waiting for 2nd spike' : 'Waiting for 1st spike',
-      });
-      
-      GestureAuditor.logLiveMath(
-        gesture: 'KINETIC_CHOP',
-        currentValue: dynamicMagnitudeYZ,
-        threshold: chopThreshold,
-        rawAxes: {'x': accel.x, 'y': accel.y, 'z': accel.z},
-        progressNote: chopPositiveSpikeTime != null ? 'Waiting for negative spike' : 'Waiting for positive spike',
-        mathNote: 'High-Pass Y: ${highPassY.toStringAsFixed(2)}, High-Pass Z: ${highPassZ.toStringAsFixed(2)}',
-      );
-    }
-    
-    // Check for high X-axis interference (horizontal shake rejection)
-    final xAxisMagnitude = accel.x.abs();
-    if (xAxisMagnitude > 8.0) {
-      // Horizontal shake detected - reject torch trigger
-      if (dynamicMagnitudeYZ > 20.0) {
-        GestureAuditor.logSensorSnapshot(
-          gesture: 'KINETIC_CHOP',
-          sensorData: {
-            'xAxis': xAxisMagnitude.toStringAsFixed(2),
-            'dynamicYZ': dynamicMagnitudeYZ.toStringAsFixed(2),
-          },
-          reason: '[REJECTED] High X-axis interference detected (horizontal shake)',
-        );
-      }
-      return;
-    }
-    
-    // ============================================================
-    // CHOP SIGNATURE DETECTION
-    // Positive spike (>chopThreshold) followed by negative spike within 150ms
-    // ============================================================
-    
-    // Detect POSITIVE spike (upward chop motion)
-    if (dynamicMagnitudeYZ > chopThreshold && chopPositiveSpikeTime == null) {
-      chopPositiveSpikeTime = now;
-      chopPositiveSpikeValue = dynamicMagnitudeYZ;
-      
-      // Send debug via SendPort (print() doesn't work in isolates!)
-      mainSendPort.send({
-        'type': 'debug_detection',
-        'gesture': 'CHOP',
-        'event': 'FIRST_SPIKE',
-        'value': dynamicMagnitudeYZ,
-        'message': 'First spike detected: ${dynamicMagnitudeYZ.toStringAsFixed(2)} m/s² - waiting for 2nd spike within 150ms',
-      });
-      
-      GestureAuditor.logSensorSnapshot(
-        gesture: 'KINETIC_CHOP',
-        sensorData: {
-          'dynamicYZ': dynamicMagnitudeYZ.toStringAsFixed(2),
-          'highPassY': highPassY.toStringAsFixed(2),
-          'highPassZ': highPassZ.toStringAsFixed(2),
-        },
-        reason: 'Positive spike detected - waiting for negative spike',
-      );
-      return;
-    }
-    
-    // Detect NEGATIVE spike (stopping motion) within 150ms window
-    if (chopPositiveSpikeTime != null) {
-      final timeSincePositive = now.difference(chopPositiveSpikeTime!).inMilliseconds;
-      
-      // Check if we're still within the 150ms window
-      if (timeSincePositive <= 150) {
-        // Look for negative spike (deceleration)
-        if (dynamicMagnitudeYZ > chopThreshold) {
-          // Valid chop detected: Positive → Negative within 150ms
-          mainSendPort.send({
-            'type': 'debug_detection',
-            'gesture': 'CHOP',
-            'event': 'TRIGGER',
-            'value': dynamicMagnitudeYZ,
-            'message': '🔥 CHOP TRIGGERED! Two spikes in ${timeSincePositive}ms - launching TORCH!',
-          });
-          
-          // Check cooldown
-          final timeSinceLastShake = lastShakeTime != null 
-              ? now.difference(lastShakeTime!).inMilliseconds / 1000.0
-              : double.infinity;
-          
-          if (timeSinceLastShake >= AppConfig.shakeCooldownSeconds) {
-            // Emit shake gesture
-            mainSendPort.send({
-              'type': 'gesture',
-              'gesture': {
-                'gestureType': 'SHAKE',
-                'timestamp': now.toIso8601String(),
-                'confidence': 0.95,
-                'metadata': {
-                  'dynamicMagnitudeYZ': dynamicMagnitudeYZ,
-                  'positiveSpikeValue': chopPositiveSpikeValue,
-                  'timeBetweenSpikes': timeSincePositive,
-                  'highPassY': highPassY,
-                  'highPassZ': highPassZ,
-                },
-              },
-            });
+   /// Signature-Based Kinetic Chop Detection (Torch)
+   /// 
+   /// NEW AXIS-SPIKE LOGIC:
+   /// - Focus strictly on Y-axis (lengthwise) and Z-axis (depth)
+   /// - IGNORE X-axis (horizontal side-to-side movement)
+   /// - Detect single MASSIVE Y/Z-axis spike > 15.0 m/s² within two consecutive samples
+   /// - If Sample Rate >= 40Hz: Require V-shape pattern (spike + reversal)
+   /// - If Sample Rate < 40Hz: Single massive spike is enough (no V-shape required)
+   /// 
+   /// Advantages over magnitude-based:
+   /// - More responsive: Detects tight Y/Z spikes even if total magnitude is modest
+   /// - Direction-aware: Can distinguish a chop from general shaking
+   /// - Sample-rate adaptive: Works well on slower devices
+   /// 
+   /// State tracking:
+   /// - chopPositiveSpikeTime: When we detected the spike
+   /// - chopPositiveSpikeValue: The magnitude of the Y/Z spike
+   void detectShake(Vector3 accel) {
+     // Axis-specific threshold for Y/Z spikes
+     const double chopAxisThreshold = 15.0; // Delta > 15.0 m/s² within two consecutive samples
+     
+     // ============================================================
+     // GLOBAL LOCK CHECK
+     // ============================================================
+     if (_globalLockActive) {
+       // Log when blocked by global lock
+       GestureAuditor.logBlocked(
+         gesture: 'KINETIC_CHOP',
+         reason: 'Global mutex lock active (800ms after last gesture)',
+         blockType: 'MUTEX',
+         context: {'accelMagnitude': accel.magnitude.toStringAsFixed(2)},
+       );
+       return;
+     }
+     
+     // ============================================================
+     // POCKET SHIELD GATE - Silent fail when in pocket
+     // ============================================================
+     if (_isCurrentlyShielded) {
+       // Log blocked gesture (silent - no haptics)
+       final yAxisFiltered = accel.y.abs();
+       final zAxisFiltered = accel.z.abs();
+       
+       // Only log if this would have been a significant motion
+       if (yAxisFiltered > 20.0 || zAxisFiltered > 20.0) {
+         GestureAuditor.logSensorSnapshot(
+           gesture: 'KINETIC_CHOP',
+           sensorData: {
+             'yAxis': yAxisFiltered.toStringAsFixed(2),
+             'zAxis': zAxisFiltered.toStringAsFixed(2),
+             'proximityNear': _isProximityNear.toString(),
+             'lux': _currentLux.toStringAsFixed(1),
+           },
+           reason: '[SHIELD] Gesture Blocked: ${_isProximityNear ? "Proximity Near" : "Lux Low"}. Battery Saved.',
+         );
+       }
+       return;
+     }
+     
+     final now = DateTime.now();
+     
+     // ============================================================
+     // 1-SECOND DEBOUNCE AFTER SUCCESSFUL CHOP
+     // ============================================================
+     if (lastChopTriggerTime != null) {
+       final timeSinceChop = now.difference(lastChopTriggerTime!).inMilliseconds / 1000.0;
+       if (timeSinceChop < 1.0) {
+         // Still in debounce period, ignore all sensor input
+         GestureAuditor.logCooldown(
+           gesture: 'KINETIC_CHOP',
+           remainingSeconds: 1.0 - timeSinceChop,
+           blockedReason: 'In 1-second post-trigger debounce period',
+         );
+         return;
+       }
+     }
+     
+     // ============================================================
+     // TWIST-GESTURE REJECTION (500ms block)
+     // ============================================================
+     if (lastTwistBlockTime != null) {
+       final timeSinceBlock = now.difference(lastTwistBlockTime!).inMilliseconds / 1000.0;
+       if (timeSinceBlock < 0.5) {
+         // Still blocked by twist gesture
+         GestureAuditor.logBlocked(
+           gesture: 'KINETIC_CHOP',
+           reason: 'Blocked by twist motion (gyro Y > 4.0 rad/s detected recently)',
+           blockType: 'MUTEX',
+           context: {'timeSinceBlock': '${(timeSinceBlock * 1000).toStringAsFixed(0)}ms'},
+         );
+         return;
+       }
+     }
+     
+     // ============================================================
+     // AXIS-SPECIFIC ANALYSIS: Focus on Y-axis (lengthwise) and Z-axis (depth)
+     // IGNORE X-axis completely
+     // ============================================================
+     final yAxisRaw = accel.y;
+     final zAxisRaw = accel.z;
+     final xAxisMagnitude = accel.x.abs();
+     
+     // Check for high X-axis interference (horizontal shake rejection)
+     if (xAxisMagnitude > 8.0) {
+       // Horizontal shake detected - reject torch trigger
+       if ((yAxisRaw.abs() > 15.0 || zAxisRaw.abs() > 15.0) && xAxisMagnitude > 12.0) {
+         GestureAuditor.logSensorSnapshot(
+           gesture: 'KINETIC_CHOP',
+           sensorData: {
+             'xAxis': xAxisMagnitude.toStringAsFixed(2),
+             'yAxis': yAxisRaw.abs().toStringAsFixed(2),
+             'zAxis': zAxisRaw.abs().toStringAsFixed(2),
+           },
+           reason: '[REJECTED] High X-axis interference detected (horizontal shake)',
+         );
+       }
+       return;
+     }
+     
+     // ============================================================
+     // AXIS SPIKE DETECTION: Look for delta > 15.0 m/s² within two consecutive samples
+     // ============================================================
+     final maxAxisValue = max(yAxisRaw.abs(), zAxisRaw.abs());
+     
+     // Live Math logging - show progress toward threshold
+     if (maxAxisValue > 8.0) {
+       // Send debug message through SendPort (print() doesn't work in isolates!)
+       mainSendPort.send({
+         'type': 'debug_gesture_progress',
+         'gesture': 'CHOP',
+         'current': maxAxisValue,
+         'threshold': chopAxisThreshold,
+         'progress': (maxAxisValue / chopAxisThreshold * 100).clamp(0, 100),
+         'note': chopPositiveSpikeTime != null ? 'Waiting for reversal/2nd spike' : 'Waiting for Y/Z spike',
+       });
+       
+       GestureAuditor.logLiveMath(
+         gesture: 'KINETIC_CHOP',
+         currentValue: maxAxisValue,
+         threshold: chopAxisThreshold,
+         rawAxes: {'x': accel.x, 'y': accel.y, 'z': accel.z},
+         progressNote: chopPositiveSpikeTime != null ? 'Waiting for reversal' : 'Waiting for Y/Z axis spike',
+         mathNote: 'Y-Axis: ${yAxisRaw.toStringAsFixed(2)} m/s², Z-Axis: ${zAxisRaw.toStringAsFixed(2)} m/s²',
+       );
+     }
+     
+     // ============================================================
+     // DETECT SPIKE: Y or Z axis > chopAxisThreshold
+     // ============================================================
+     if (maxAxisValue > chopAxisThreshold && chopPositiveSpikeTime == null) {
+       chopPositiveSpikeTime = now;
+       chopPositiveSpikeValue = maxAxisValue;
+       
+       // Send debug via SendPort
+       mainSendPort.send({
+         'type': 'debug_detection',
+         'gesture': 'CHOP',
+         'event': 'SPIKE_DETECTED',
+         'value': maxAxisValue,
+         'message': 'Axis spike detected: ${maxAxisValue.toStringAsFixed(2)} m/s² (Y: ${yAxisRaw.toStringAsFixed(2)}, Z: ${zAxisRaw.toStringAsFixed(2)})',
+       });
+       
+       GestureAuditor.logSensorSnapshot(
+         gesture: 'KINETIC_CHOP',
+         sensorData: {
+           'yAxis': yAxisRaw.toStringAsFixed(2),
+           'zAxis': zAxisRaw.toStringAsFixed(2),
+           'maxAxis': maxAxisValue.toStringAsFixed(2),
+         },
+         reason: 'Y/Z-axis spike detected - waiting for reversal/second spike',
+       );
+       return;
+     }
+     
+     // ============================================================
+     // VALIDATE SPIKE: Check for reversal or second spike
+     // Sample-rate adaptive: 
+     // - If sampleRate >= 40Hz: Require V-shape (spike + reversal)
+     // - If sampleRate < 40Hz: Single massive spike is enough
+     // ============================================================
+     if (chopPositiveSpikeTime != null) {
+       final timeSinceSpike = now.difference(chopPositiveSpikeTime!).inMilliseconds;
+       
+       // Estimate current sample rate: (250 samples / elapsed_ms) * 1000
+       // For conservative estimate, assume 50Hz = 20ms per sample
+       final estimatedSampleRate = 1000.0 / 20.0; // ~50Hz at 20ms interval
+       
+       // Check if we're still within the 150ms window for V-shape detection
+       if (timeSinceSpike <= 150) {
+         // Look for REVERSAL: If this sample shows magnitude drop
+         // Or look for another massive spike
+         final isReversal = maxAxisValue < (chopPositiveSpikeValue * 0.5); // At least 50% drop
+         final isSecondSpike = maxAxisValue > chopAxisThreshold;
+         
+         // Sample-rate adaptive logic
+         final shouldUseFastMode = estimatedSampleRate >= 40.0; // Fast sampling: need V-shape
+         
+         if (!shouldUseFastMode || isReversal || isSecondSpike) {
+           // VALID CHOP: Either slow sampling (single spike ok) OR fast sampling with reversal/second spike
+           mainSendPort.send({
+             'type': 'debug_detection',
+             'gesture': 'CHOP',
+             'event': 'TRIGGER',
+             'value': maxAxisValue,
+             'message': '🔥 CHOP TRIGGERED! Mode: ${shouldUseFastMode ? "Fast (V-shape)" : "Slow (spike)"}, Time: ${timeSinceSpike}ms',
+           });
+           
+           // Check cooldown
+           final timeSinceLastShake = lastShakeTime != null 
+               ? now.difference(lastShakeTime!).inMilliseconds / 1000.0
+               : double.infinity;
+           
+           if (timeSinceLastShake >= AppConfig.shakeCooldownSeconds) {
+             // Emit shake gesture
+             mainSendPort.send({
+               'type': 'gesture',
+               'gesture': {
+                 'gestureType': 'SHAKE',
+                 'timestamp': now.toIso8601String(),
+                 'confidence': 0.95,
+                 'metadata': {
+                   'spikeValue': chopPositiveSpikeValue,
+                   'reversalValue': maxAxisValue,
+                   'timeBetweenSpikes': timeSinceSpike,
+                   'yAxis': yAxisRaw,
+                   'zAxis': zAxisRaw,
+                   'sampleRateMode': shouldUseFastMode ? 'fast' : 'slow',
+                 },
+               },
+             });
 
-            lastShakeTime = now;
-            lastGestureTime['SHAKE'] = now;
-            lastShakeMutexTime = now; // Enable mutex to block back-tap
-            lastChopTriggerTime = now; // Start 1-second debounce
-            
-            // ACTIVATE GLOBAL LOCK (800ms)
-            activateGlobalLock();
-            
-            // Reset chop state
-            chopPositiveSpikeTime = null;
-            chopPositiveSpikeValue = 0.0;
-            
-            // Log gesture trigger with auditor
-            GestureAuditor.logThresholdCrossing(
-              gesture: 'KINETIC_CHOP',
-              data: 'Dynamic YZ: ${dynamicMagnitudeYZ.toStringAsFixed(2)} m/s², Spike Interval: ${timeSincePositive}ms',
-              status: 'TRIGGERED',
-              uiSynced: true,
-              additionalInfo: 'Motorola-style chop detected - Torch toggled. Back-tap blocked for ${AppConfig.shakeMutexDuration}s',
-            );
-            
-            // Log mutual exclusion
-            GestureAuditor.logMutualExclusion(
-              primaryGesture: 'KINETIC_CHOP',
-              blockedGesture: 'SECRET_STRIKE',
-              exclusionDuration: AppConfig.shakeMutexDuration,
-            );
-          } else {
-            // Blocked by cooldown
-            chopPositiveSpikeTime = null;
-            chopPositiveSpikeValue = 0.0;
-            
-            GestureAuditor.logCooldown(
-              gesture: 'KINETIC_CHOP',
-              remainingSeconds: AppConfig.shakeCooldownSeconds - timeSinceLastShake,
-              blockedReason: 'Chop signature detected but in cooldown period',
-            );
-          }
-        }
-      } else {
-        // Expired: No negative spike within 150ms window
-        if (chopPositiveSpikeValue > 25.0) {
-          GestureAuditor.logSensorSnapshot(
-            gesture: 'KINETIC_CHOP',
-            sensorData: {
-              'positiveSpikeValue': chopPositiveSpikeValue.toStringAsFixed(2),
-              'timeSincePositive': timeSincePositive.toString(),
-            },
-            reason: '[REJECTED] No negative spike within 150ms window (incomplete chop)',
-          );
-        }
-        
-        // Reset state
-        chopPositiveSpikeTime = null;
-        chopPositiveSpikeValue = 0.0;
-      }
-    }
-  }
+             lastShakeTime = now;
+             lastGestureTime['SHAKE'] = now;
+             lastShakeMutexTime = now; // Enable mutex to block back-tap
+             lastChopTriggerTime = now; // Start 1-second debounce
+             
+             // ACTIVATE GLOBAL LOCK (800ms)
+             activateGlobalLock();
+             
+             // Reset chop state
+             chopPositiveSpikeTime = null;
+             chopPositiveSpikeValue = 0.0;
+             
+             // Log gesture trigger with auditor
+             GestureAuditor.logThresholdCrossing(
+               gesture: 'KINETIC_CHOP',
+               data: 'Spike: ${chopPositiveSpikeValue.toStringAsFixed(2)} m/s², Time: ${timeSinceSpike}ms, Mode: ${shouldUseFastMode ? "Fast" : "Slow"}',
+               status: 'TRIGGERED',
+               uiSynced: true,
+               additionalInfo: 'Signature-based chop detected - Torch toggled. Back-tap blocked for ${AppConfig.shakeMutexDuration}s',
+             );
+             
+             // Log mutual exclusion
+             GestureAuditor.logMutualExclusion(
+               primaryGesture: 'KINETIC_CHOP',
+               blockedGesture: 'SECRET_STRIKE',
+               exclusionDuration: AppConfig.shakeMutexDuration,
+             );
+           } else {
+             // Blocked by cooldown
+             chopPositiveSpikeTime = null;
+             chopPositiveSpikeValue = 0.0;
+             
+             GestureAuditor.logCooldown(
+               gesture: 'KINETIC_CHOP',
+               remainingSeconds: AppConfig.shakeCooldownSeconds - timeSinceLastShake,
+               blockedReason: 'Chop signature detected but in cooldown period',
+             );
+           }
+         }
+       } else {
+         // Expired: No reversal within 150ms window
+         if (chopPositiveSpikeValue > 20.0 && chopPositiveSpikeValue > 10.0) {
+           GestureAuditor.logSensorSnapshot(
+             gesture: 'KINETIC_CHOP',
+             sensorData: {
+               'spikeValue': chopPositiveSpikeValue.toStringAsFixed(2),
+               'timeSinceSpike': timeSinceSpike.toString(),
+             },
+             reason: '[REJECTED] No reversal/second spike within 150ms window (incomplete chop)',
+           );
+         }
+         
+         // Reset state
+         chopPositiveSpikeTime = null;
+         chopPositiveSpikeValue = 0.0;
+       }
+     }
+   }
 
   /// Motorola-Style Double Twist Detection (Camera)
   /// 
@@ -698,7 +717,7 @@ void sensorIsolateEntry(SendPort mainSendPort) {
   /// - Honors 800ms Global Lock (blocks if Chop/Twist just happened)
   /// - Honors Pocket Shield (silent discard when in pocket)
   /// - Mutual exclusion with Shake (1.5s mutex after shake)
-  void detectBackTap(Vector3 accel) {
+  void detectBackTap(Vector3 accel, Vector3? gyro) {
     // ============================================================
     // GLOBAL LOCK CHECK - Honor 800ms mutex after any gesture
     // ============================================================
@@ -747,6 +766,26 @@ void sensorIsolateEntry(SendPort mainSendPort) {
           reason: 'Blocked by shake/chop mutex (${AppConfig.shakeMutexDuration}s exclusion)',
           blockType: 'MUTEX',
           context: {'timeSinceMutex': '${(timeSinceMutex * 1000).toStringAsFixed(0)}ms'},
+        );
+        return;
+      }
+    }
+    
+    // ============================================================
+    // GYRO-BLOCKING: If phone is rotating (Twist), block Strike
+    // Constraint: If gyro.magnitude > 1.5 rad/s, don't process Strike
+    // Reason: Any acceleration spike during rotation is result of the rotation,
+    //         not an actual tap. This prevents Twist from triggering Assistant.
+    // ============================================================
+    if (gyro != null) {
+      final gyroMagnitude = gyro.magnitude;
+      if (gyroMagnitude > 1.5) {
+        // Phone is rotating - any acceleration is just rotation artifact
+        GestureAuditor.logBlocked(
+          gesture: 'SECRET_STRIKE',
+          reason: 'Gyro-blocking active: Phone is rotating (${gyroMagnitude.toStringAsFixed(2)} rad/s > 1.5)',
+          blockType: 'ROTATION',
+          context: {'gyroMagnitude': gyroMagnitude.toStringAsFixed(2)},
         );
         return;
       }
@@ -857,65 +896,80 @@ void sensorIsolateEntry(SendPort mainSendPort) {
       
       // ============================================================
       // DOUBLE-TAP WINDOW LOGIC (200-450ms between spikes)
-      // ============================================================
-      if (firstStrikeSpike == null) {
-        // This is the FIRST spike - record it
-        firstStrikeSpike = StrikeSpike(zAxisFiltered, totalMagnitude, now);
-        
-        mainSendPort.send({
-          'type': 'debug_detection',
-          'gesture': 'STRIKE',
-          'event': 'FIRST_SPIKE',
-          'value': zAxisFiltered,
-          'message': 'First spike recorded (${zAxisFiltered.toStringAsFixed(2)} m/s²) - waiting for 2nd (200-450ms window)',
+       // ============================================================
+       if (firstStrikeSpike == null) {
+         // This is the FIRST spike - record it
+         firstStrikeSpike = StrikeSpike(zAxisFiltered, totalMagnitude, now);
+         firstStrikeBlankingWindowStart = now; // Start 60ms blanking window (filter case vibration)
+         
+         mainSendPort.send({
+           'type': 'debug_detection',
+           'gesture': 'STRIKE',
+           'event': 'FIRST_SPIKE',
+           'value': zAxisFiltered,
+           'message': 'First spike recorded (${zAxisFiltered.toStringAsFixed(2)} m/s²) - blanking 60ms, then waiting for 2nd (100-450ms window)',
+         });
+         GestureAuditor.logSensorSnapshot(
+           gesture: 'SECRET_STRIKE',
+           sensorData: {
+             'zAxisFiltered': zAxisFiltered.toStringAsFixed(2),
+             'spike': '1/2',
+           },
+           reason: 'First strike spike detected - 60ms blanking window active, then waiting for second spike (100-450ms window)',
+         );
+       } else {
+         // Check if we're still in the 60ms blanking window (mechanical vibration filter)
+         final timeSinceFirstSpike = now.difference(firstStrikeBlankingWindowStart!).inMilliseconds;
+         if (timeSinceFirstSpike < 60) {
+           // Still in blanking window - ignore this spike (phone case vibration)
+           mainSendPort.send({
+             'type': 'debug_detection',
+             'gesture': 'STRIKE',
+             'event': 'BLANKING_WINDOW',
+             'value': timeSinceFirstSpike.toDouble(),
+             'message': 'In blanking window (${timeSinceFirstSpike}ms < 60ms) - filtering mechanical vibration',
+           });
+           return; // Silently ignore - this is vibration artifact
+         }
+         
+         // This is a potential SECOND spike - check timing (100-450ms window)
+         final timeBetweenSpikes = now.difference(firstStrikeSpike!.timestamp).inMilliseconds;
+         
+         mainSendPort.send({
+           'type': 'debug_detection',
+           'gesture': 'STRIKE',
+           'event': 'SECOND_SPIKE_CANDIDATE',
+           'value': zAxisFiltered,
+           'message': 'Second spike candidate - timing: ${timeBetweenSpikes}ms (need 100-450ms)',
         });
-        GestureAuditor.logSensorSnapshot(
-          gesture: 'SECRET_STRIKE',
-          sensorData: {
-            'zAxisFiltered': zAxisFiltered.toStringAsFixed(2),
-            'spike': '1/2',
-          },
-          reason: 'First strike spike detected - waiting for second spike (200-450ms window)',
-        );
-      } else {
-        // This is a potential SECOND spike - check timing
-        final timeBetweenSpikes = now.difference(firstStrikeSpike!.timestamp).inMilliseconds;
         
-        mainSendPort.send({
-          'type': 'debug_detection',
-          'gesture': 'STRIKE',
-          'event': 'SECOND_SPIKE_CANDIDATE',
-          'value': zAxisFiltered,
-          'message': 'Second spike candidate - timing: ${timeBetweenSpikes}ms (need 200-450ms)',
-        });
-        
-        if (timeBetweenSpikes < 200) {
-          // Too fast - likely part of the same impact, ignore
-          mainSendPort.send({
-            'type': 'debug_detection',
-            'gesture': 'STRIKE',
-            'event': 'REJECTED_TOO_FAST',
-            'value': timeBetweenSpikes.toDouble(),
-            'message': '⚠️ REJECTED: Too fast (${timeBetweenSpikes}ms < 200ms) - same impact',
-          });
-          GestureAuditor.logSensorSnapshot(
-            gesture: 'SECRET_STRIKE',
-            sensorData: {
-              'zAxisFiltered': zAxisFiltered.toStringAsFixed(2),
-              'timeBetweenSpikes': '${timeBetweenSpikes}ms',
-            },
-            reason: '[REJECTED] Second spike too fast (<200ms) - likely same impact',
-          );
-          // Don't reset - wait for actual second spike
-        } else if (timeBetweenSpikes <= 450) {
-          // VALID DOUBLE-TAP: Two spikes within 200-450ms window!
-          mainSendPort.send({
-            'type': 'debug_detection',
-            'gesture': 'STRIKE',
-            'event': 'VALID_DOUBLE_TAP',
-            'value': timeBetweenSpikes.toDouble(),
-            'message': '🔥 VALID DOUBLE-TAP! Timing: ${timeBetweenSpikes}ms - Triggering SECRET STRIKE!',
-          });
+         if (timeBetweenSpikes < 100) {
+           // Too fast - likely part of the same impact, ignore
+           mainSendPort.send({
+             'type': 'debug_detection',
+             'gesture': 'STRIKE',
+             'event': 'REJECTED_TOO_FAST',
+             'value': timeBetweenSpikes.toDouble(),
+             'message': '⚠️ REJECTED: Too fast (${timeBetweenSpikes}ms < 100ms) - same impact or vibration artifact',
+           });
+           GestureAuditor.logSensorSnapshot(
+             gesture: 'SECRET_STRIKE',
+             sensorData: {
+               'zAxisFiltered': zAxisFiltered.toStringAsFixed(2),
+               'timeBetweenSpikes': '${timeBetweenSpikes}ms',
+             },
+             reason: '[REJECTED] Second spike too fast (<100ms) - likely same impact',
+           );
+           // Don't reset - wait for actual second spike
+         } else if (timeBetweenSpikes <= 450) {
+           // VALID DOUBLE-TAP: Two spikes within 100-450ms window!
+           mainSendPort.send({
+             'type': 'debug_detection',
+             'gesture': 'STRIKE',
+             'event': 'VALID_DOUBLE_TAP',
+             'value': timeBetweenSpikes.toDouble(),
+             'message': '🔥 VALID DOUBLE-TAP! Timing: ${timeBetweenSpikes}ms (blanking + 100-450ms) - Triggering SECRET STRIKE!',
+           });
           
           // Check cooldown
           final timeSinceLastStrike = lastGestureTime['BACK_TAP'] != null
@@ -1240,9 +1294,9 @@ void sensorIsolateEntry(SendPort mainSendPort) {
             _maxAccelMagnitude = filteredAccel.magnitude;
           }
           
-          detectShake(filteredAccel);
-          detectBackTap(filteredAccel);
-          detectFlip(filteredAccel);
+           detectShake(filteredAccel);
+           detectBackTap(filteredAccel, latestFilteredGyro);
+           detectFlip(filteredAccel);
           
           // ============================================================
           // HEARTBEAT: Send debug info every 250 accel samples (~5 seconds at 50Hz)
@@ -1274,6 +1328,7 @@ void sensorIsolateEntry(SendPort mainSendPort) {
         } else if (sensor == 'gyro') {
           _gyroSampleCount++;
           final filteredGyro = rawVector.applyFilter(gyroFilter);
+          latestFilteredGyro = filteredGyro; // Store for gyro-blocking strike detection
           
           // Track max gyro Y for twist debugging
           if (filteredGyro.y.abs() > _maxGyroY) {

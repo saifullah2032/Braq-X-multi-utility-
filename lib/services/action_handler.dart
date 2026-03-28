@@ -3,9 +3,9 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
 import 'package:torch_light/torch_light.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/gesture_event.dart';
 import '../models/gesture_settings.dart';
-import '../constants/app_config.dart';
 import 'haptic_service.dart';
 import 'gesture_auditor.dart';
 
@@ -430,73 +430,75 @@ class ActionHandler {
     }
   }
 
-  /// Launch WhatsApp with logging
-  /// Uses generic intent without hardcoded package to avoid permission denial
-  /// Falls back to generic messaging if WhatsApp unavailable
-  static Future<String> _launchWhatsAppWithLogging() async {
-    try {
-      // Primary: Try WhatsApp-specific intent without package restriction
-      GestureAuditor.logIntentLaunch(
-        action: 'WHATSAPP',
-        intentAction: 'android.intent.action.SEND',
-        success: true,
-        packageName: null, // No hardcoded package - let system resolve
-      );
-      
-      const AndroidIntent intent = AndroidIntent(
-        action: 'android.intent.action.SEND',
-        type: 'text/plain',
-        flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-      );
-      await intent.launch();
-      developer.log(
-        '💬 WHATSAPP: Launched via back-tap gesture (generic SEND intent)',
-        name: 'ActionHandler',
-      );
-      return 'WhatsApp/Messaging app launched successfully';
-    } catch (e) {
-      developer.log('Primary WhatsApp SEND intent failed: $e', name: 'ActionHandler');
-      
-      GestureAuditor.logIntentLaunch(
-        action: 'WHATSAPP',
-        intentAction: 'android.intent.action.SEND',
-        success: false,
-        packageName: null,
-      );
-      
-      try {
-        // Fallback: Try MAIN action for app drawer
-        GestureAuditor.logIntentLaunch(
-          action: 'WHATSAPP (fallback)',
-          intentAction: 'android.intent.action.MAIN',
-          success: true,
-          packageName: null,
-        );
-        
-        const AndroidIntent fallbackIntent = AndroidIntent(
-          action: 'android.intent.action.MAIN',
-          category: 'android.intent.category.APP_MESSAGING',
-          flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-        );
-        await fallbackIntent.launch();
-        developer.log('💬 WHATSAPP: Launched via messaging category fallback', name: 'ActionHandler');
-        return 'Messaging app launched (fallback)';
-      } catch (e2) {
-        developer.log('WhatsApp fallback failed: $e2', name: 'ActionHandler');
-        
-        GestureAuditor.logIntentLaunch(
-          action: 'WHATSAPP (fallback)',
-          intentAction: 'android.intent.action.MAIN',
-          success: false,
-          packageName: null,
-        );
-        
-        return 'WhatsApp launch FAILED: $e2';
+   /// Launch WhatsApp with logging
+   /// Uses url_launcher with whatsapp://send URL scheme to avoid permission denial errors
+   /// This method doesn't require explicit Android intents or hardcoded package names
+   static Future<String> _launchWhatsAppWithLogging() async {
+     try {
+       // Primary: Use url_launcher with WhatsApp URL scheme
+       final whatsappUrl = Uri.parse('whatsapp://send');
+       
+       GestureAuditor.logIntentLaunch(
+         action: 'WHATSAPP',
+         intentAction: 'whatsapp://send',
+         success: true,
+         packageName: null,
+       );
+       
+       if (await canLaunchUrl(whatsappUrl)) {
+         await launchUrl(whatsappUrl);
+         developer.log(
+           '💬 WHATSAPP: Launched via back-tap gesture (url_launcher whatsapp:// scheme)',
+           name: 'ActionHandler',
+         );
+         return 'WhatsApp launched successfully via URL scheme';
+       } else {
+         throw 'WhatsApp URL scheme not available';
+       }
+     } catch (e) {
+       developer.log('Primary WhatsApp URL scheme failed: $e', name: 'ActionHandler');
+       
+       GestureAuditor.logIntentLaunch(
+         action: 'WHATSAPP',
+         intentAction: 'whatsapp://send',
+         success: false,
+         packageName: null,
+       );
+       
+       try {
+         // Fallback: Use generic SEND intent (no package restriction)
+         // This lets Android resolve which messaging app to use
+         GestureAuditor.logIntentLaunch(
+           action: 'WHATSAPP (fallback - generic SEND)',
+           intentAction: 'android.intent.action.SEND',
+           success: true,
+           packageName: null,
+         );
+         
+         const AndroidIntent fallbackIntent = AndroidIntent(
+           action: 'android.intent.action.SEND',
+           type: 'text/plain',
+           flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+         );
+         await fallbackIntent.launch();
+         developer.log('💬 WHATSAPP: Fallback to generic SEND intent', name: 'ActionHandler');
+         return 'Messaging app launched via generic intent (fallback)';
+       } catch (e2) {
+         developer.log('WhatsApp fallback failed: $e2', name: 'ActionHandler');
+         
+         GestureAuditor.logIntentLaunch(
+           action: 'WHATSAPP (fallback)',
+           intentAction: 'android.intent.action.SEND',
+           success: false,
+           packageName: null,
+          );
+          
+          return 'WhatsApp launch FAILED: $e2';
+        }
       }
     }
-  }
 
-  /// Launch Google Assistant with logging
+    /// Launch Google Assistant with logging
   /// Uses generic VOICE_COMMAND without hardcoded package to avoid permission denial
   static Future<String> _launchAssistantWithLogging() async {
     try {
