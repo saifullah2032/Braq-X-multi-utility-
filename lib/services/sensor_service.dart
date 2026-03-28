@@ -125,10 +125,10 @@ class SensorService {
   /// Sends raw sensor data to the processing isolate for gesture detection
   void _startSensorMonitoring() {
     try {
-      // Listen to accelerometer at fastest rate (optimally ~50Hz, platform dependent)
-      // Using Duration(milliseconds: 10) targets ~100Hz for higher precision
-      _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.fastestInterval)
-          .listen((event) {
+       // Listen to accelerometer at safe ~50Hz rate (20ms interval)
+       // This provides good gesture detection precision without requiring HIGH_SAMPLING_RATE_SENSORS permission
+       _accelSub = accelerometerEventStream(samplingPeriod: Duration(milliseconds: 20))
+           .listen((event) {
         // Forward to processing isolate
         _isolateSendPort.send({
           'type': 'sensor_data',
@@ -140,10 +140,10 @@ class SensorService {
         });
       });
 
-      // Listen to gyroscope at fastest rate for gesture detection precision
-      // Using fastest interval ensures maximum sampling for accurate gesture detection
-      _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.fastestInterval)
-          .listen((event) {
+       // Listen to gyroscope at safe ~50Hz rate (20ms interval) for gesture detection
+       // This provides stable sampling without requiring HIGH_SAMPLING_RATE_SENSORS permission
+       _gyroSub = gyroscopeEventStream(samplingPeriod: Duration(milliseconds: 20))
+           .listen((event) {
         // Forward to processing isolate
         _isolateSendPort.send({
           'type': 'sensor_data',
