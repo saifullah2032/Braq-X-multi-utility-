@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
-/// Notebook Graph Paper Background - 100% Fidelity Implementation
-/// Features: Aged cream base, precise light blue grid, classic coral margin double-line
+/// Wide-Rule Notebook Background - Aggressive Neo-Brutalist Implementation
+/// Features: Aged cream base, wide 32px grid, double coral anchor margin
 class NeoBrutalistBackground extends StatelessWidget {
   final Widget child;
 
@@ -13,46 +13,44 @@ class NeoBrutalistBackground extends StatelessWidget {
     return Container(
       color: AppColors.background, // #FFF8DE (Aged Cream)
       child: CustomPaint(
-        painter: NotebookGridPainter(),
+        painter: WideRuleNotebookPainter(),
         child: child,
       ),
     );
   }
 }
 
-/// High-fidelity notebook grid painter
-/// - Vertical Lines: Light Blue (#C5E9ED) at 55% opacity, 1.0px stroke, 25px spacing  
-/// - Horizontal Lines: Same specs as vertical
-/// - Margin Line: Coral Red (#FF7B89) at 60% opacity, at 15% offset from left
-class NotebookGridPainter extends CustomPainter {
+/// Aggressive Neo-Brutalist wide-rule notebook painter
+/// - Grid: Light Blue (#D4F1F4) at 40% opacity, 1.0px stroke, 32px spacing
+/// - Anchor Margin: Double Coral Red (#FF7B89) at 45% opacity, 12% offset
+class WideRuleNotebookPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = const Color(0xFFC5E9ED).withOpacity(0.55) // Light Blue 55% tactile visibility
-      ..strokeWidth = 1.0; // Sharp 1.0px stroke like card borders
+      ..color = const Color(0xFFD4F1F4).withOpacity(0.40) // Light Blue 40% intensity
+      ..strokeWidth = 1.0; // Sharp 1.0px stroke
 
-    final marginPaint = Paint()
-      ..color = const Color(0xFFFF7B89).withOpacity(0.60) // Coral Red 60% for strong margin
+    final anchorPaint = Paint()
+      ..color = const Color(0xFFFF7B89).withOpacity(0.45) // Coral Red 45% anchor line
       ..strokeWidth = 1.5;
 
-    const double spacing = 25.0; // Precise graph paper density
+    const double gridSize = 32.0; // Wide-rule spacing for cleaner look
 
-    // Draw Vertical Lines
-    for (double i = 0; i < size.width; i += spacing) {
+    // Draw Vertical Grid Lines
+    for (double i = 0; i < size.width; i += gridSize) {
       canvas.drawLine(Offset(i, 0), Offset(i, size.height), gridPaint);
     }
 
-    // Draw Horizontal Lines
-    for (double i = 0; i < size.height; i += spacing) {
+    // Draw Horizontal Grid Lines  
+    for (double i = 0; i < size.height; i += gridSize) {
       canvas.drawLine(Offset(0, i), Offset(size.width, i), gridPaint);
     }
 
-    // Draw Vertical Margin Line (Classic Notebook Style)
-    // Position: 15% offset from the left edge
-    double marginX = size.width * 0.15;
-    canvas.drawLine(Offset(marginX, 0), Offset(marginX, size.height), marginPaint);
-    // Double line for authentic notebook detail
-    canvas.drawLine(Offset(marginX + 3.5, 0), Offset(marginX + 3.5, size.height), marginPaint);
+    // Draw Double Vertical Anchor Margin (12% offset)
+    double anchorX = size.width * 0.12;
+    canvas.drawLine(Offset(anchorX, 0), Offset(anchorX, size.height), anchorPaint);
+    // Second line for double anchor effect
+    canvas.drawLine(Offset(anchorX + 3.5, 0), Offset(anchorX + 3.5, size.height), anchorPaint);
   }
 
   @override
