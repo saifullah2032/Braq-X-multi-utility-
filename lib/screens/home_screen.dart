@@ -115,10 +115,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: SafeArea(
           child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(), // Eliminates bounce/overscroll
+            physics: const NeverScrollableScrollPhysics(), // Lock dashboard - no scrolling
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 20), // More aggressive side margins
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distribute cards evenly on screen
               children: [
                 // ========================================
                 // 1. HEADER SECTION
@@ -182,7 +183,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: AppColors.textPrimary,
           ),
         ),
-        const Spacer(),
         // Star Icon: Enhanced Peach container with precise spacing
         Container(
           padding: const EdgeInsets.all(12), // More generous padding
@@ -477,7 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: Icon(
           icon,
-          size: 22,
+          size: 32, // Increased from 22 to 32px for better visibility
           color: isEnabled ? Colors.black : Colors.grey[600],
         ),
       ),
@@ -736,22 +736,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         const SizedBox(height: 16), // Space before trigger icons
-        // Icon-based trigger row aligned to left margin
-        Row(
+        // Overlapping icon row with -4 spacing for scrapbook aesthetic
+        Wrap(
+          spacing: -4, // Slight overlap effect for scrapbook look
           children: [
-            // Trigger 1: SHAKE DETECTED (Torch)
+            // Trigger 1: SHAKE DETECTED (Torch) - Coral
             _buildTriggerIconCard(
               icon: Icons.flashlight_on,
               color: AppColors.cardShake, // Coral Red
             ),
-            const SizedBox(width: 12), // Spacing between icons
-            // Trigger 2: DND ACTIVATED (Notifications Off)
+            // Trigger 2: DND ACTIVATED (Notifications Off) - Periwinkle
             _buildTriggerIconCard(
               icon: Icons.notifications_off,
               color: AppColors.cardFlip, // Periwinkle
             ),
-            const SizedBox(width: 12), // Spacing between icons
-            // Trigger 3: ENGINE ARMED (Power/Bolt)
+            // Trigger 3: ENGINE ARMED (Power/Bolt) - Sky Blue
             _buildTriggerIconCard(
               icon: Icons.power_settings_new,
               color: AppColors.masterToggleActive, // Sky Blue
@@ -762,15 +761,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Icon-based trigger card - 56x56 square with gesture icon
+  /// Icon-based trigger card - 48x48 square with gesture icon for overlapping layout
   /// Uses gesture-specific color backgrounds with 3.5px borders and 4px shadows
   Widget _buildTriggerIconCard({
     required IconData icon,
     required Color color,
   }) {
     return Container(
-      width: 56,
-      height: 56,
+      width: 48, // Reduced from 56 to 48
+      height: 48, // Reduced from 56 to 48
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.zero, // Sharp corners

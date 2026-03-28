@@ -11,7 +11,7 @@ class StickerBadge extends StatelessWidget {
   const StickerBadge({
     super.key,
     this.text = 'BARQ-X',
-    this.rotationRadians = -0.05, // -0.05 radians for slight tilt
+    this.rotationRadians = -0.08, // -0.08 radians for hand-applied look (4.5 degrees)
     this.backgroundColor = const Color(0xFFFFF2C6), // Yellow/Cream
     this.textColor = Colors.black,
   });
@@ -22,8 +22,8 @@ class StickerBadge extends StatelessWidget {
       angle: rotationRadians, // Use radians directly (no conversion needed)
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: 14.0,
-          vertical: 6.0,
+          horizontal: 16.0, // Increased from 14.0
+          vertical: 8.0,    // Increased from 6.0
         ),
         decoration: BoxDecoration(
           color: backgroundColor,
@@ -47,7 +47,7 @@ class StickerBadge extends StatelessWidget {
           style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 10,
+            fontSize: 18, // Increased from 10 to 18 (1.8x larger)
             letterSpacing: 1.2, // Aggressive letterSpacing for Neo-Brutalist feel
           ),
           textAlign: TextAlign.center,
