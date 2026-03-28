@@ -183,12 +183,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         const Spacer(),
-        // Folder Icon: Peach container, 3.5px border, 8px shadow
+        // Star Icon: Peach container, 3.5px border, 8px shadow
         Container(
           padding: const EdgeInsets.all(10),
           decoration: _brutalistDecoration(const Color(0xFFFFCCB6)), // Peach
           child: const Icon(
-            Icons.folder_open,
+            Icons.star_rounded,
             size: 26,
             color: AppColors.textPrimary,
           ),
